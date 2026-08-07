@@ -8,7 +8,7 @@
 - **Mobile App (ทุก Role):** Flutter (Dart) — รองรับทั้ง iOS และ Android จาก codebase เดียว
   - **นิสิต/นักศึกษา, อาจารย์, บุคลากร:** จองสนาม, ดูตาราง, แสดง QR Code ของตัวเองตอนไปถึงสนาม
   - **Staff/Admin:** **Approve/Reject การจองผ่าน Mobile App ได้เช่นกัน** (ไม่ได้จำกัดแค่ Web Admin Panel) + หน้าจอสำหรับ**คนเฝ้าสนาม** ใช้กล้อง Scan QR Code ของผู้จองเพื่อเช็คอิน
-- **Web Admin Panel (Staff/Admin เท่านั้น):** Next.js (App Router), Tailwind CSS — จัดการสนาม, ตารางเวลา, และ Approve/Reject การจอง (ช่องทางเสริมสำหรับงานที่ต้องดูภาพรวม/รายงาน)
+- **Web Admin Panel (Staff/Admin เท่านั้น):** Next.js (App Router), Tailwind CSS — จัดการสนาม/ตารางเวลา, จัดการสมาชิก, จัดการ Role/Permission (ช่องทางหลักสำหรับ 3 งานนี้ เพราะ Mobile App ไม่มีหน้าเหล่านี้) และ Approve/Reject การจอง (ช่องทางเสริม — ช่องทางหลักคือ Mobile App ของ Staff คนเฝ้าสนาม)
 - **Backend:** NestJS (TypeScript), REST API / WebSocket — ให้บริการทั้ง Mobile App และ Web Admin Panel ผ่าน endpoint เดียวกัน (แยกสิทธิ์ด้วย Role ไม่ใช่ด้วยช่องทาง)
 - **Database:** PostgreSQL (ผ่าน Prisma ORM)
 - **Infrastructure:** Docker, Docker Compose, GitHub Actions (Linux runner สำหรับ backend/web CI; macOS runner หรือ Codemagic สำหรับ build iOS — ดู [10. Future Considerations](#10-future-considerations))
@@ -46,8 +46,8 @@
 ```mermaid
 graph TD
     subgraph Client
-        M[Flutter Mobile App<br/>iOS + Android<br/>ทุก Role: จอง / Approve / Scan QR เช็คอิน]
-        A[Next.js Admin Panel<br/>App Router / SSR<br/>Staff/Admin — จัดการสนาม + Approve เสริม]
+        M[Flutter Mobile App<br/>iOS + Android<br/>REST + WebSocket Real-time<br/>ทุก Role: จอง / Approve / Scan QR เช็คอิน]
+        A[Next.js Admin Panel<br/>REST + WebSocket Real-time<br/>Staff/Admin — จัดการสนาม + Approve เสริม]
     end
 
     subgraph Backend
@@ -421,7 +421,8 @@ model Booking {
 
 **Dynamic RBAC (Role/Permission ต่อเมนู):**
 - แทนที่จะ hardcode สิทธิ์ในโค้ด (`@Roles('STAFF','ADMIN')`) ทุก endpoint จะประกาศแค่ **ต้องใช้สิทธิ์อะไรกับเมนูไหน** เช่น `@RequirePermission('booking', 'view')` แล้วให้ `PermissionsGuard` ไป query `RolePermission` จาก DB ตาม `role` ของ user ที่ login อยู่ ว่ามี `canView/canAdd/canEdit/canDelete` หรือไม่
-- **Admin สร้าง Role ใหม่ได้เองแบบ dynamic** ผ่าน Web Admin Panel (เช่น สร้าง Role "เจ้าหน้าที่รักษาความปลอดภัย" ที่เห็นแค่เมนู Booking แบบ View+Approve แต่แก้ไข Facility ไม่ได้) โดยไม่ต้องแก้โค้อหรือ deploy ใหม่
+- **Admin สร้าง Role ใหม่ได้เองแบบ dynamic** ผ่าน Web Admin Panel (เช่น สร้าง Role "เจ้าหน้าที่รักษาความปลอดภัย" ที่เห็นแค่เมนู Booking แบบ View+Approve แต่แก้ไข Facility ไม่ได้) โดยไม่ต้องแก้โค้ดหรือ deploy ใหม่
+- **การ map action → permission flag:** เมนู `booking` ใช้ `canView` = ดูรายการ, `canAdd` = สร้าง booking ใหม่ (ฝั่ง Mobile), `canEdit` = Approve/Reject/Cancel/Checkin (ทุก action ที่เปลี่ยนสถานะ booking ที่มีอยู่แล้ว), `canDelete` = ลบ record ออกจากระบบจริง (ใช้น้อย) — Role ที่มีแค่ `canView` จะเข้าดูรายการได้แต่กด Approve/Reject ไม่ได้ตามที่ระบุไว้ใน [9. Test Plan](#9-test-plan)
 - **Seed ข้อมูลตั้งต้น (`isSystem = true`, ลบไม่ได้):**
   - Menu: `facility`, `booking`, `user`, `role`
   - Role: `STUDENT`, `LECTURER`, `STAFF`, `ADMIN` พร้อม `RolePermission` เริ่มต้นตามที่ออกแบบไว้ในหัวข้อนี้ (เช่น `ADMIN` = ติ๊กทุกอย่างทุกเมนู, `STUDENT` = `booking.canView + canAdd` เท่านั้น)
@@ -581,7 +582,7 @@ apps/e2e/
 ## 10. Future Considerations (ยังไม่ตัดสินใจ / ไม่ทำในเฟสนี้)
 
 - **Redis:** อาจใช้สำหรับ Distributed Lock (ตอนมี NestJS หลาย instance) และ WebSocket Pub/Sub — ยังไม่ได้คุยกันว่าจะเข้า stack จริงหรือไม่ ต้องตัดสินใจก่อนขึ้น production หรือก่อน scale เป็นหลาย instance
-- **Notification Channel:** ยังไม่ระบุผู้ให้บริการ (เช่น LINE OA, Email, Push) — ปัจจุบันออกแบบเป็น generic module ที่ยิงผ่าน WebSocket ไปยัง Mobile App
+- **Notification Channel:** ยังไม่ระบุผู้ให้บริการ (เช่น LINE OA, Email, Push) — ปัจจุบันออกแบบเป็น generic module ที่ยิงผ่าน WebSocket ไปยังทั้ง Mobile App และ Web Admin Panel
 - **Mobile E2E Testing Tool:** Playwright ไม่ครอบคลุม Flutter — ต้องเลือก `integration_test`, Maestro, หรือ Appium ก่อนเริ่มเขียนเทสของ Mobile App
 - **iOS Build/CI:** เครื่อง dev หลักเป็น Windows → ต้องใช้ GitHub Actions macOS runner หรือ Codemagic สำหรับ build/deploy iOS (Android build/test ได้ปกติจาก Windows) — ต้องตัดสินใจตัวไหนก่อนตั้ง CI pipeline จริง
 
@@ -592,9 +593,9 @@ apps/e2e/
 1. ✅ เขียนและรีวิว `plan.md` (ขั้นนี้)
 2. `git init` → commit แรก → push ขึ้น `https://github.com/chonlapat323/UniPlay.git`
 3. Project Setup Structure — scaffold monorepo: NestJS backend, Next.js Admin Panel, Flutter Mobile App, Docker Compose, Prisma init (ยังไม่มี business logic)
-4. Implement Prisma schema จริง (`Role`/`Menu`/`RolePermission`/`User`/Booking flow ทั้งหมด) + migration แรก + seed default Role/Menu (`isSystem=true`)
-5. **RBAC Module** — `PermissionsGuard`, `@RequirePermission()` decorator, Role/Menu/Permission CRUD service + unit tests (ทำก่อน Auth เพราะ Auth ต้องพึ่ง guard ตัวนี้)
-6. Auth Module (NestJS) — รองรับทั้ง Mobile (ทุก Role) และ Admin Panel login, เช็ค `isActive` + unit tests
+4. Implement Prisma schema จริง (`Role`/`Menu`/`RolePermission`/`User`/Booking flow ทั้งหมด) + migration แรก + seed default Role/Menu (`isSystem=true`) — ต้อง seed Role ก่อนเพราะ `User.roleId` เป็น FK บังคับ (สร้าง user ทดสอบไม่ได้ถ้ายังไม่มี Role)
+5. Auth Module (NestJS) — JWT login รองรับทั้ง Mobile (ทุก Role) และ Admin Panel, เช็ค `isActive`, ผลลัพธ์คือ `req.user` มี `roleId` ติดมาด้วย + unit tests
+6. **RBAC Module** — `PermissionsGuard`, `@RequirePermission()` decorator, Role/Menu/Permission CRUD service + unit tests (ทำหลัง Auth เพราะ guard ตัวนี้ต้องอ่าน `req.user` ที่ Auth เป็นคน populate ให้ก่อน)
 7. **User Module (Member Management)** — CRUD สมาชิก, assign Role, toggle `isActive` + unit tests
 8. Facility & Schedule Module (read-side) + unit tests
 9. Booking Module — สร้าง booking (`PENDING`) พร้อม transaction-based conflict handling + Approve/Reject endpoint (Staff/Admin) + unit tests
