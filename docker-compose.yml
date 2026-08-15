@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: uniplay-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: uniplay
+      POSTGRES_PASSWORD: uniplay_dev_password
+      POSTGRES_DB: uniplay
+    ports:
+      - "5434:5432"
+    volumes:
+      - uniplay_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  uniplay_postgres_data:
