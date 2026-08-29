@@ -70,6 +70,56 @@ Prisma มีชื่อ type ของตัวเอง ที่แปลง
 
 ---
 
+## แก้ปัญหา: Docker Desktop เปิดไม่ได้ ("Virtualization support not detected")
+
+ถ้าเปิด Docker Desktop แล้วเจอ error แบบนี้:
+
+> **Virtualization support not detected**
+> Docker Desktop failed to start because virtualisation support wasn't detected. Contact your IT admin to enable virtualization or check system requirements.
+
+ทำตามลำดับนี้ **ก่อนเริ่มวิธี A** — เรียงจากเช็คก่อน ไปหาวิธีแก้ทีหลัง อย่าข้ามไปเข้า BIOS ทันทีเพราะบางเครื่อง virtualization เปิดอยู่แล้วจริงๆ แค่ Docker Desktop ตรวจสอบผิดพลาดเฉยๆ
+
+### ขั้นที่ 1 — เช็คก่อนว่า Virtualization เปิดอยู่จริงไหม (ไม่ต้องเข้า BIOS)
+
+เปิด **PowerShell** (ไม่ต้อง Admin) แล้วรัน:
+
+```powershell
+systeminfo | Select-String -Pattern "Hyper-V", "Virtualization"
+```
+
+- ถ้าเห็น **"A hypervisor has been detected"** → virtualization เปิดอยู่แล้ว **ข้ามไปขั้นที่ 3 เลย** (ไม่ใช่ปัญหา BIOS)
+- ถ้าเห็น **"VM Monitor Mode Extensions: No"** หรือ **"Virtualization Enabled In Firmware: No"** → ต้องไปเปิดที่ BIOS จริง (ไปขั้นที่ 2)
+
+เช็คเพิ่มอีกทางด้วย WSL (ยืนยันว่า WSL2 backend เคยตั้งค่าสำเร็จมาก่อนไหม):
+
+```powershell
+wsl --status
+```
+
+ถ้าเห็น `Default Distribution: docker-desktop` พร้อม kernel version ครบ → แปลว่า WSL2 เคยทำงานได้ปกติมาก่อน ปัญหาไม่ใช่ virtualization แน่นอน
+
+### ขั้นที่ 2 — ถ้า Disabled จริง: เปิดที่ BIOS/UEFI
+
+1. รีสตาร์ทเครื่อง → กดปุ่มเข้า BIOS ตอนบูต (`F2`/`Del`/`F10`/`Esc` แล้วแต่ยี่ห้อเครื่อง — ถ้าจับจังหวะไม่ทัน ใช้ **Settings → System → Recovery → Advanced startup → Restart now → Troubleshoot → Advanced options → UEFI Firmware Settings** แทน)
+2. หาเมนู **Advanced** หรือ **CPU Configuration**
+3. เปิดตัวเลือก **Intel VT-x** / **Intel Virtualization Technology** (Intel) หรือ **SVM Mode** (AMD) ให้เป็น **Enabled**
+4. Save & Exit (`F10`) → เครื่อง restart เข้า Windows ปกติ
+
+### ขั้นที่ 3 — ถ้า Virtualization เปิดอยู่แล้ว แต่ Docker Desktop ยัง error: แก้ที่ตัว Docker Desktop เอง
+
+ทำตามลำดับ หยุดทันทีที่แก้ได้:
+
+1. **รีสตาร์ทเครื่อง** (ถ้ายังไม่ได้ทำหลัง Windows Update ล่าสุด)
+2. อัปเดต WSL kernel:
+   ```powershell
+   wsl --update
+   ```
+3. ปิด Docker Desktop ให้สนิท (คลิกขวาไอคอนที่ system tray → **Quit Docker Desktop**) แล้วเปิดใหม่
+4. เปิด Docker Desktop → **Settings → Troubleshoot → "Reset to factory defaults"**
+5. ถ้ายังไม่หาย → **Uninstall Docker Desktop แล้วติดตั้งใหม่** (installer จะ setup WSL2 integration ให้ใหม่ทั้งหมด)
+
+---
+
 ## วิธี A: Docker Compose + schema-draft.sql (แนะนำ ทำก่อน)
 
 ### ขั้นที่ 1 — เข้าใจไฟล์ `docker-compose.yml`
