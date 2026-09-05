@@ -7,7 +7,7 @@ import {
   Patch,
   Delete,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -18,38 +18,39 @@ import { Public } from '../auth/decorators/public.decorator';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // TODO: เปิด public ไว้ชั่วคราวเพื่อ bootstrap user แรกได้ก่อนมี token
-  // พอทำ RBAC (PermissionsGuard) เสร็จ ต้องเปลี่ยนเป็นจำกัดสิทธิ์เฉพาะ Staff/Admin เท่านั้น
-  @ApiOperation({ summary: 'สร้างสมาชิกใหม่ (ไม่ต้อง login)' })
+  // TODO: เปิด public ไว้ชั่วคราวทุก method (ยังไม่ได้สอนเรื่อง Login/JWT ให้นักเรียน)
+  // พอถึงบทเรียน AUTH_GUIDE.md ต้องเอา @Public() ออกจาก findAll/findOne/update/remove
+  // แล้วใส่ @ApiBearerAuth() กลับเข้าไปให้ตรงกับ SWAGGER_GUIDE.md อีกครั้ง
+  @ApiOperation({ summary: 'สร้างสมาชิกใหม่' })
   @Public()
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'ดึงรายการสมาชิกทั้งหมด' })
+  @Public()
   @Get()
   findAll() {
     return this.usersService.findAll();
   }
 
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'ดึงสมาชิกทีละคนตาม id' })
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'แก้ไขข้อมูลสมาชิก' })
+  @Public()
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
 
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'ลบสมาชิก' })
+  @Public()
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);

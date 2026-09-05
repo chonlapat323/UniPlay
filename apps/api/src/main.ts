@@ -12,7 +12,6 @@ async function bootstrap() {
     .setTitle('UniPlay API')
     .setDescription('เอกสาร API ของระบบจองสนามกีฬา UniPlay')
     .setVersion('1.0')
-    .addBearerAuth()
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);

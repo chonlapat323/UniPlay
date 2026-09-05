@@ -6,7 +6,7 @@
 
 | โฟลเดอร์ | สถานะ | ใช้ทำอะไร |
 |---|---|---|
-| **`apps/api`** | มี method ครบ (Create/Get/Update/Delete + Auth) ใช้งานได้จริง | **เฉลย/ของจริงที่ใช้งาน** — ห้ามลบ method ออกจากตรงนี้ |
+| **`apps/api`** | มี method ครบ (Create/Get/Update/Delete) ใช้งานได้จริง | **เฉลย/ของจริงที่ใช้งาน** — ห้ามลบ method ออกจากตรงนี้ |
 | **`ex/api`** | เหลือแค่ `create()` เท่านั้น | **ที่ฝึกของนักเรียน** — ให้ตามคู่มือนี้เพิ่ม Get/Update/Delete เข้าไปเอง |
 
 **ทำตามคู่มือนี้ในโฟลเดอร์ `ex/api` เท่านั้น** (ไม่ใช่ `apps/api`) — ก่อนเริ่มต้องรัน `cd ex/api && npm install` ก่อน (ไม่ได้ copy `node_modules` มาด้วยตอน copy โฟลเดอร์) เสร็จแล้วเทียบผลลัพธ์/โค้ดกับ `apps/api` ได้เลยว่าตรงกันไหม เพราะเป็นคำตอบชุดเดียวกัน
@@ -79,7 +79,7 @@ export class UsersController {
 }
 ```
 
-> สังเกต: `POST /users` เปิด `@Public()` ไว้ (ไม่ต้อง login ก็เรียกได้) เพื่อ bootstrap user แรกได้ — ส่วน method ที่จะเพิ่มในคู่มือนี้ (Get/Update/Delete) **ไม่ใส่ `@Public()`** เพราะควรต้อง login ก่อนถึงจะเห็น/แก้ไข/ลบข้อมูล User ได้ (ใช้ `POST /auth/login` ที่ทำไว้แล้วใน `AUTH_GUIDE.md` เพื่อขอ token มาก่อน)
+> **เรื่อง Login/`@Public()`:** ในคู่มือนี้ทุก method (Get/Update/Delete ที่กำลังจะเพิ่ม) ให้ใส่ `@Public()` เหมือน `create()` ไปก่อน — คือ**ยังไม่ต้อง login ก็เรียกได้ทุก endpoint** เพราะยังไม่ได้เรียนเรื่อง Login/JWT (อยู่ใน `AUTH_GUIDE.md` ซึ่งเป็นบทเรียนถัดไป) พอเรียนเรื่อง Login แล้วค่อยกลับมาเอา `@Public()` ออกจาก Get/Update/Delete ทีหลัง (เก็บไว้แค่ `create()` เท่านั้นที่ควร public ต่อไป เพื่อ bootstrap user แรกได้)
 
 ---
 
@@ -122,11 +122,13 @@ import { Controller, Post, Body, Get, Param } from '@nestjs/common';
 ```
 
 ```typescript
+@Public()
 @Get()
 findAll() {
   return this.usersService.findAll();
 }
 
+@Public()
 @Get(':id')
 findOne(@Param('id') id: string) {
   return this.usersService.findOne(id);
@@ -136,41 +138,29 @@ findOne(@Param('id') id: string) {
 **อธิบาย:**
 - `@Get()` (ไม่มี path) → `GET /users`
 - `@Get(':id')` → `GET /users/:id` — `:id` เป็น **route parameter** ดึงค่าออกมาด้วย `@Param('id')`
+- `@Public()` — ใส่ไว้เพราะยังไม่ได้เรียนเรื่อง Login/JWT (ดู note ท้ายหัวข้อ 0 ด้านบน) ทำให้เรียก endpoint นี้ได้เลยไม่ต้องมี token
 - **ลำดับสำคัญ:** ต้องประกาศ `@Get()` (ไม่มี param) ไว้ก่อน `@Get(':id')` เสมอ ถ้าสลับกัน NestJS จะจับ path แปลกๆ ผิดพลาดได้ (เช่น เผลอตีความ `/users/abc` เป็นพยายามหา id ชื่อ `abc` ทั้งที่ตั้งใจจะให้ตรงกับ route อื่น)
 
-### 1.3 ทดสอบ (ต้อง login ก่อน เพราะไม่ได้ใส่ `@Public()`)
+### 1.3 ทดสอบ (ไม่ต้อง login — ยังไม่ได้เรียนเรื่องนี้)
 
 ```bash
-# 1. สร้าง user ไว้ทดสอบ (endpoint นี้ public อยู่แล้ว)
+# 1. สร้าง user ไว้ทดสอบ
 curl -X POST http://localhost:3000/users \
   -H "Content-Type: application/json" \
   -d '{"email":"test@uniplay.test","password":"mypassword123","name":"Test User","roleId":"<roleId จริงจาก SELECT id FROM role>"}'
 
-# 2. Login เอา token มาก่อน
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@uniplay.test","password":"mypassword123"}'
-# ได้ { "access_token": "eyJ..." } กลับมา เอาไปแปะแทน <TOKEN> ด้านล่าง
-
-# 3. GET ทั้งหมด
-curl http://localhost:3000/users -H "Authorization: Bearer <TOKEN>"
-
-# 4. GET ทีละคน
-curl http://localhost:3000/users/<id> -H "Authorization: Bearer <TOKEN>"
-
-# 5. ลองไม่แนบ token ดู (ต้องได้ 401)
+# 2. GET ทั้งหมด
 curl http://localhost:3000/users
+
+# 3. GET ทีละคน (เอา id จาก response ตอนขั้นที่ 1 มาแทน <id>)
+curl http://localhost:3000/users/<id>
 ```
 
 **ผลจริงที่ทดสอบผ่านแล้ว** (ตัวอย่างนี้มาจากการทดสอบจริงคนละรอบ ใช้ user คนละคนกับที่สั่งสร้างไว้ในขั้นตอนที่ 1 — ดูแค่**โครงสร้าง**ของ response ว่าหน้าตาเป็นแบบนี้ ส่วน email/name จริงในเครื่องคุณจะเป็นของ `test@uniplay.test`/`Test User` ตามที่สร้างไว้):
 ```json
-// GET /users (มี token)
+// GET /users
 [{"id":"...","email":"student1@uniplay.test","name":"Somchai","roleId":"...","isActive":true,"createdAt":"...","updatedAt":"..."}]
 // HTTP 200
-
-// GET /users (ไม่มี token)
-{"message":"No token provided","error":"Unauthorized","statusCode":401}
-// HTTP 401
 ```
 
 ---
@@ -208,19 +198,19 @@ import { UpdateUserDto } from './dto/update-user.dto';
 ```
 
 ```typescript
+@Public()
 @Patch(':id')
 update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
   return this.usersService.update(id, updateUserDto);
 }
 ```
 
-**อธิบาย:** ใช้ `@Patch` ไม่ใช่ `@Put` — เพราะ **PATCH** หมายถึง "แก้บาง field" (ส่งมาแค่ที่อยากเปลี่ยน) ส่วน **PUT** หมายถึง "แทนที่ข้อมูลทั้งอันใหม่ทั้งหมด" (ต้องส่งครบทุก field) — โปรเจคนี้เลือก PATCH เพราะ `UpdateUserDto` ออกแบบให้ทุก field optional อยู่แล้ว ตรงกับความหมายของ PATCH
+**อธิบาย:** ใส่ `@Public()` ด้วยเหตุผลเดียวกับหัวข้อ 1 (ยังไม่ได้เรียน Login) ส่วนเรื่อง method ใช้ `@Patch` ไม่ใช่ `@Put` — เพราะ **PATCH** หมายถึง "แก้บาง field" (ส่งมาแค่ที่อยากเปลี่ยน) ส่วน **PUT** หมายถึง "แทนที่ข้อมูลทั้งอันใหม่ทั้งหมด" (ต้องส่งครบทุก field) — โปรเจคนี้เลือก PATCH เพราะ `UpdateUserDto` ออกแบบให้ทุก field optional อยู่แล้ว ตรงกับความหมายของ PATCH
 
 ### 2.3 ทดสอบ
 
 ```bash
 curl -X PATCH http://localhost:3000/users/<id> \
-  -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"name":"ชื่อใหม่"}'
 ```
@@ -254,6 +244,7 @@ import { Controller, Post, Body, Get, Param, Patch, Delete } from '@nestjs/commo
 ```
 
 ```typescript
+@Public()
 @Delete(':id')
 remove(@Param('id') id: string) {
   return this.usersService.remove(id);
@@ -264,10 +255,10 @@ remove(@Param('id') id: string) {
 
 ```bash
 # ลบ
-curl -X DELETE http://localhost:3000/users/<id> -H "Authorization: Bearer <TOKEN>"
+curl -X DELETE http://localhost:3000/users/<id>
 
 # เช็คว่าลบจริง (ต้องได้ 404)
-curl http://localhost:3000/users/<id> -H "Authorization: Bearer <TOKEN>"
+curl http://localhost:3000/users/<id>
 ```
 
 **ผลจริงที่ทดสอบผ่านแล้ว:**
@@ -361,29 +352,33 @@ import { Public } from '../auth/decorators/public.decorator';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // TODO: เปิด public ไว้ชั่วคราวเพื่อ bootstrap user แรกได้ก่อนมี token
-  // พอทำ RBAC (PermissionsGuard) เสร็จ ต้องเปลี่ยนเป็นจำกัดสิทธิ์เฉพาะ Staff/Admin เท่านั้น
+  // TODO: เปิด public ไว้ชั่วคราวทุก method (ยังไม่ได้สอนเรื่อง Login/JWT)
+  // พอถึงบทเรียน AUTH_GUIDE.md ต้องเอา @Public() ออกจาก findAll/findOne/update/remove
   @Public()
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
+  @Public()
   @Get()
   findAll() {
     return this.usersService.findAll();
   }
 
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
+  @Public()
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
 
+  @Public()
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
@@ -395,7 +390,7 @@ export class UsersController {
 
 ## 5. เช็คลิสต์ก่อนถือว่าทำเสร็จ
 
-- [ ] `GET /users` และ `GET /users/:id` ต้อง login (มี token) ถึงจะเรียกได้ — ไม่มี token ต้องได้ 401
+- [ ] `GET /users`, `GET /users/:id`, `PATCH /users/:id`, `DELETE /users/:id` เรียกได้เลยโดยไม่ต้องแนบ token (ใส่ `@Public()` ไว้ครบทุกตัว)
 - [ ] `GET /users/:id` ด้วย id ที่ไม่มีจริง ต้องได้ 404 พร้อมข้อความชัดเจน
 - [ ] `PATCH /users/:id` ถ้าส่ง `password` มาด้วย ต้องถูก hash ใหม่ก่อนบันทึกเสมอ (ห้ามเก็บ plain text)
 - [ ] `DELETE /users/:id` กับ id ที่ไม่มีจริง ต้องได้ 404 ไม่ใช่ error แปลกๆ จาก Prisma ตรงๆ
@@ -407,5 +402,5 @@ export class UsersController {
 ## 6. เชื่อมกับเอกสารอื่น
 
 - **`NESTJS_BACKEND_GUIDE.md`** — คู่มือตั้งโปรเจคตั้งแต่ต้น (มีแค่ Create ตอนจบคู่มือ ก่อนตัด method อื่นออกเพื่อทำคู่มือนี้)
-- **`AUTH_GUIDE.md`** — คู่มือระบบ Login/JWT ที่ทำให้ `GET`/`PATCH`/`DELETE` ในคู่มือนี้ต้อง login ก่อนถึงจะเรียกได้
-- **`plan.md` หัวข้อ 11 (Roadmap)** — ขั้นตอนถัดไปหลังทำคู่มือนี้เสร็จคือ RBAC Module (`PermissionsGuard`) จำกัดสิทธิ์ว่า Role ไหนทำอะไรได้บ้าง (ตอนนี้ login แล้วเรียกได้หมดทุก method ไม่ว่า Role อะไร)
+- **`AUTH_GUIDE.md`** — คู่มือระบบ Login/JWT (บทเรียนถัดไป — ยังไม่ได้สอนตอนทำคู่มือนี้ จึงใส่ `@Public()` ไว้ทุก method ไปก่อน) พอเรียนจบบทนี้ค่อยกลับมาเอา `@Public()` ออกจาก Get/Update/Delete
+- **`plan.md` หัวข้อ 11 (Roadmap)** — ขั้นตอนถัดไปหลังทำคู่มือนี้เสร็จคือ RBAC Module (`PermissionsGuard`) จำกัดสิทธิ์ว่า Role ไหนทำอะไรได้บ้าง
