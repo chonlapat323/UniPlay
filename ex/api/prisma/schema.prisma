@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String           @unique @db.VarChar(100)
+  isSystem       Boolean          @default(false) @map("is_system")
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime         @default(now()) @map("updated_at") @db.Timestamptz(6)
+  users          User[]
+  rolePermissions RolePermission[]
+
+  @@map("role")
+}
+
+model Menu {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key             String            @unique @db.VarChar(100)
+  label           String            @db.VarChar(200)
+  rolePermissions RolePermission[]
+
+  @@map("menu")
+}
+
+model RolePermission {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roleId    String  @map("role_id") @db.Uuid
+  menuId    String  @map("menu_id") @db.Uuid
+  canView   Boolean @default(false) @map("can_view")
+  canAdd    Boolean @default(false) @map("can_add")
+  canEdit   Boolean @default(false) @map("can_edit")
+  canDelete Boolean @default(false) @map("can_delete")
+  role      Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  menu      Menu    @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, menuId])
+  @@map("role_permission")
+}
+
+model User {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String    @unique @db.VarChar(255)
+  password  String    @db.VarChar(255)
+  name      String    @db.VarChar(200)
+  roleId    String    @map("role_id") @db.Uuid
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  role         Role      @relation(fields: [roleId], references: [id])
+  bookings     Booking[] @relation("BookingOwner")
+  approvals    Booking[] @relation("BookingApprover")
+  checkIns     Booking[] @relation("BookingCheckedInBy")
+
+  @@map("user")
+}
+
+model Facility {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String        @db.VarChar(200)
+  type      FacilityType
+  location  String?       @db.VarChar(255)
+  capacity  Int?
+  isActive  Boolean       @default(true) @map("is_active")
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime      @default(now()) @map("updated_at") @db.Timestamptz(6)
+  bookings  Booking[]
+
+  @@map("facility")
+}
+
+model Booking {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String        @map("user_id") @db.Uuid
+  facilityId     String        @map("facility_id") @db.Uuid
+  startTime      DateTime      @map("start_time") @db.Timestamptz(6)
+  endTime        DateTime      @map("end_time") @db.Timestamptz(6)
+  status         BookingStatus @default(PENDING)
+  qrCode         String?       @unique @map("qr_code") @db.VarChar(255)
+  checkedInAt    DateTime?     @map("checked_in_at") @db.Timestamptz(6)
+  checkedInById  String?       @map("checked_in_by_id") @db.Uuid
+  approvedById   String?       @map("approved_by_id") @db.Uuid
+  rejectedReason String?       @map("rejected_reason")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime      @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  user       User     @relation("BookingOwner", fields: [userId], references: [id])
+  facility   Facility @relation(fields: [facilityId], references: [id])
+  approvedBy User?    @relation("BookingApprover", fields: [approvedById], references: [id])
+  checkedInBy User?   @relation("BookingCheckedInBy", fields: [checkedInById], references: [id])
+
+  @@index([facilityId, startTime, endTime], map: "idx_booking_facility_time")
+  @@map("booking")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  NO_SHOW
+  COMPLETED
+
+  @@map("booking_status")
+}
+
+enum FacilityType {
+  FOOTBALL
+  BASKETBALL
+  BADMINTON
+  TENNIS
+  VOLLEYBALL
+  SWIMMING
+  OTHER
+
+  @@map("facility_type")
+}
