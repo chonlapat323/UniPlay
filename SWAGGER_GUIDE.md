@@ -49,13 +49,16 @@ npm audit
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+/* -------------------- Swagger: เพิ่มบรรทัดนี้ -------------------- */
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+/* ------------------------------------------------------------------ */
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
+  /* ------------------------- Swagger: เพิ่ม block นี้ทั้งหมด ------------------------- */
   const config = new DocumentBuilder()
     .setTitle('UniPlay API')
     .setDescription('เอกสาร API ของระบบจองสนามกีฬา UniPlay')
@@ -64,6 +67,7 @@ async function bootstrap() {
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
+  /* ------------------------------------------------------------------------------------ */
 
   await app.listen(process.env.PORT ?? 3000);
 }
@@ -92,11 +96,15 @@ bootstrap();
 แก้ `src/users/users.controller.ts` — เพิ่ม import และ decorator บนสุดของ class:
 
 ```typescript
+/* -------------------- Swagger: เพิ่มบรรทัดนี้ -------------------- */
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+/* ------------------------------------------------------------------ */
 ```
 
 ```typescript
+/* ---- Swagger: เพิ่มบรรทัดนี้ ---- */
 @ApiTags('users')
+/* -------------------------------- */
 @Controller('users')
 export class UsersController {
 ```
@@ -104,11 +112,15 @@ export class UsersController {
 ทำเหมือนกันกับ `src/auth/auth.controller.ts`:
 
 ```typescript
+/* -------------------- Swagger: เพิ่มบรรทัดนี้ -------------------- */
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+/* ------------------------------------------------------------------ */
 ```
 
 ```typescript
+/* ---- Swagger: เพิ่มบรรทัดนี้ ---- */
 @ApiTags('auth')
+/* -------------------------------- */
 @Controller('auth')
 export class AuthController {
 ```
@@ -124,46 +136,50 @@ export class AuthController {
 ```typescript
 // TODO: เปิด public ไว้ชั่วคราวเพื่อ bootstrap user แรกได้ก่อนมี token
 // พอทำ RBAC (PermissionsGuard) เสร็จ ต้องเปลี่ยนเป็นจำกัดสิทธิ์เฉพาะ Staff/Admin เท่านั้น
-@ApiOperation({ summary: 'สร้างสมาชิกใหม่ (ไม่ต้อง login)' })
+@ApiOperation({ summary: 'สร้างสมาชิกใหม่ (ไม่ต้อง login)' })              /* <<< Swagger */
 @Public()
 @Post()
 create(@Body() createUserDto: CreateUserDto) {
   return this.usersService.create(createUserDto);
 }
 
-@ApiBearerAuth()
-@ApiOperation({ summary: 'ดึงรายการสมาชิกทั้งหมด' })
+@ApiBearerAuth()                                                           /* <<< Swagger */
+@ApiOperation({ summary: 'ดึงรายการสมาชิกทั้งหมด' })                        /* <<< Swagger */
 @Get()
 findAll() {
   return this.usersService.findAll();
 }
 
-@ApiBearerAuth()
-@ApiOperation({ summary: 'ดึงสมาชิกทีละคนตาม id' })
+@ApiBearerAuth()                                                           /* <<< Swagger */
+@ApiOperation({ summary: 'ดึงสมาชิกทีละคนตาม id' })                         /* <<< Swagger */
 @Get(':id')
 findOne(@Param('id') id: string) {
   return this.usersService.findOne(id);
 }
 
-@ApiBearerAuth()
-@ApiOperation({ summary: 'แก้ไขข้อมูลสมาชิก' })
+@ApiBearerAuth()                                                           /* <<< Swagger */
+@ApiOperation({ summary: 'แก้ไขข้อมูลสมาชิก' })                             /* <<< Swagger */
 @Patch(':id')
 update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
   return this.usersService.update(id, updateUserDto);
 }
 
-@ApiBearerAuth()
-@ApiOperation({ summary: 'ลบสมาชิก' })
+@ApiBearerAuth()                                                           /* <<< Swagger */
+@ApiOperation({ summary: 'ลบสมาชิก' })                                      /* <<< Swagger */
 @Delete(':id')
 remove(@Param('id') id: string) {
   return this.usersService.remove(id);
 }
 ```
 
+**บรรทัดที่มี `/* <<< Swagger */` ต่อท้าย คือบรรทัดที่ต้องเพิ่มเข้าไปใหม่** ส่วน `@Public()`, `@Post()`, `@Get()`, ตัว method เดิม ฯลฯ มีอยู่แล้วจาก `AUTH_GUIDE.md`/`USER_CRUD_METHODS_GUIDE.md` ไม่ต้องแก้
+
 ต้องแก้ import ด้วย (เพิ่ม `ApiBearerAuth`):
 
 ```typescript
+/* -------------------- Swagger: เพิ่ม ApiBearerAuth เข้าไปในบรรทัดเดิม -------------------- */
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+/* ------------------------------------------------------------------------------------------ */
 ```
 
 **อธิบาย:**
@@ -173,7 +189,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 ทำแบบเดียวกันกับ `auth.controller.ts` (ไม่ต้องมี `@ApiBearerAuth()` เพราะ login ไม่ต้องมี token อยู่แล้ว):
 
 ```typescript
-@ApiOperation({ summary: 'Login ด้วย email/password รับ JWT access_token กลับมา' })
+@ApiOperation({ summary: 'Login ด้วย email/password รับ JWT access_token กลับมา' })  /* <<< Swagger */
 @Public()
 @HttpCode(HttpStatus.OK)
 @Post('login')
@@ -188,31 +204,35 @@ async login(@Body() loginDto: LoginDto) {
 
 ```typescript
 import { IsEmail, IsString, IsUUID, IsOptional, IsBoolean } from 'class-validator';
+/* -------------------- Swagger: เพิ่มบรรทัดนี้ -------------------- */
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+/* ------------------------------------------------------------------ */
 
 export class CreateUserDto {
-  @ApiProperty({ example: 'student1@uniplay.test' })
+  @ApiProperty({ example: 'student1@uniplay.test' })                       /* <<< Swagger */
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'mypassword123' })
+  @ApiProperty({ example: 'mypassword123' })                               /* <<< Swagger */
   @IsString()
   password: string;
 
-  @ApiProperty({ example: 'Somchai' })
+  @ApiProperty({ example: 'Somchai' })                                     /* <<< Swagger */
   @IsString()
   name: string;
 
-  @ApiProperty({ example: 'a541ccca-c9e0-4825-adfb-f71e1de40676' })
+  @ApiProperty({ example: 'a541ccca-c9e0-4825-adfb-f71e1de40676' })         /* <<< Swagger */
   @IsUUID()
   roleId: string;
 
-  @ApiPropertyOptional({ example: true })
+  @ApiPropertyOptional({ example: true })                                  /* <<< Swagger */
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 }
 ```
+
+**บรรทัดที่มี `/* <<< Swagger */` คือของใหม่** ส่วน `@IsEmail()`, `@IsString()`, `@IsUUID()`, `@IsOptional()`, `@IsBoolean()` และ import จาก `class-validator` มีอยู่แล้วจาก `NESTJS_BACKEND_GUIDE.md`
 
 **อธิบาย:**
 - `@ApiProperty({ example: ... })` — ใช้กับ field ที่**บังคับส่ง** (ไม่มี `@IsOptional()`) บอก Swagger ว่า field นี้มีตัวอย่างค่าเป็นอะไร (โชว์ preview ในหน้า "Try it out" ให้เลย ไม่ต้องพิมพ์เอง)
@@ -222,14 +242,16 @@ export class CreateUserDto {
 
 ```typescript
 import { IsEmail, IsString } from 'class-validator';
+/* -------------------- Swagger: เพิ่มบรรทัดนี้ -------------------- */
 import { ApiProperty } from '@nestjs/swagger';
+/* ------------------------------------------------------------------ */
 
 export class LoginDto {
-  @ApiProperty({ example: 'student1@uniplay.test' })
+  @ApiProperty({ example: 'student1@uniplay.test' })                       /* <<< Swagger */
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'mypassword123' })
+  @ApiProperty({ example: 'mypassword123' })                               /* <<< Swagger */
   @IsString()
   password: string;
 }
@@ -249,7 +271,9 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {}
 **ต้องเปลี่ยน import เป็น:**
 
 ```typescript
+/* -------------------- Swagger: เปลี่ยนบรรทัดนี้ (ของเดิมมาจาก @nestjs/mapped-types) -------------------- */
 import { PartialType } from '@nestjs/swagger';
+/* ---------------------------------------------------------------------------------------------------------- */
 import { CreateUserDto } from './create-user.dto';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {}

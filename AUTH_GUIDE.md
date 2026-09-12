@@ -102,6 +102,25 @@ sequenceDiagram
     API-->>U: 200 OK (ข้อมูลที่ขอ)
 ```
 
+### 2.4 Decorator คืออะไร ทำหน้าที่อะไร (พื้นฐานก่อนไปเจอ `@Public()`)
+
+**Decorator** คือ syntax พิเศษของ TypeScript ที่เขียนนำหน้าด้วย `@` (เช่น `@Injectable()`, `@Controller('users')`, `@Public()`) — หน้าที่ของมันคือ **"แปะป้าย/แนบข้อมูลเพิ่มเติม" (metadata)** ให้กับ class, method, หรือ property โดยไม่ต้องไปแก้โค้ดข้างในของสิ่งนั้นเลย
+
+**เบื้องหลังจริงๆ แล้ว decorator ก็คือฟังก์ชันธรรมดา** ที่ TypeScript เรียกให้อัตโนมัติตอน "นิยาม class" (ตอนไฟล์ถูก import/load ครั้งแรก ไม่ใช่ตอนมี request เข้ามา) เช่น:
+
+```typescript
+@Controller('users')   // เทียบเท่ากับ: Controller('users')(UsersController)
+export class UsersController { ... }
+```
+
+`Controller('users')` เป็นฟังก์ชันที่ return ฟังก์ชันอีกชั้น ซึ่งรับ `UsersController` เป็น argument แล้วไปแนบ metadata `{ path: 'users' }` ติดกับ class นั้นไว้ (ใช้กลไกของ JS ชื่อ `Reflect.defineMetadata` เก็บไว้เบื้องหลัง) — เขียน `@Controller('users')` ไว้บน class แค่เป็น**ทางลัดที่อ่านง่ายกว่า** การเรียกฟังก์ชันตรงๆ แบบด้านบน
+
+**จุดสำคัญที่มักเข้าใจผิด:** Decorator เอง**ไม่ได้ทำอะไรตอน runtime ที่มี request เข้ามาเลย** มันแค่แปะป้าย/บันทึกข้อมูลไว้ล่วงหน้าตอนแอปเริ่มทำงาน — ต้องมี**ส่วนอื่นของ NestJS มาอ่านป้ายนั้นอีกที** งานถึงจะเกิดขึ้นจริง เช่น:
+- `@Controller('users')` แปะป้าย path ไว้ → ตอนแอป start, `RouterExplorer` ของ NestJS มาอ่านป้ายนี้เพื่อไปสร้าง route จริง
+- `@Public()` (ที่จะสร้างในขั้นที่ 4) แปะป้าย `isPublic: true` ไว้ที่ method → ตอนมี request เข้ามาจริง `JwtAuthGuard` (ขั้นที่ 7) ใช้ `Reflector` มาอ่านป้ายนี้อีกที ถึงจะรู้ว่าควรข้ามการเช็ค token หรือไม่
+
+พูดง่ายๆ: **decorator = ป้ายกำกับ, ส่วนที่ตัดสินใจทำงานจริงคือโค้ดที่ไปอ่านป้ายนั้น** (Guard/Reflector ในคู่มือนี้) — นี่คือเหตุผลที่ `@Public()` เพียงลำพัง (โค้ด 2 บรรทัดในขั้นที่ 4) ไม่มีผลอะไรเลยจนกว่าจะมี `JwtAuthGuard` ไปเช็ค metadata ของมันในขั้นที่ 7
+
 ---
 
 ## 3. Package ที่ต้องติดตั้ง
@@ -138,6 +157,26 @@ src/
 └── users/
     └── users.service.ts        # (แก้ของเดิม) เพิ่ม bcrypt.hash ตอน create
 ```
+
+**ใช้ NestJS CLI สร้างไฟล์พวกนี้แทนสร้างมือได้** (รันจากโฟลเดอร์ `apps/api` หรือ `ex/api`):
+
+```bash
+nest g mo auth                                        # auth.module.ts (auto-register ใน app.module.ts ให้ด้วย)
+nest g s auth --no-spec                                # auth.service.ts
+nest g co auth --no-spec                               # auth.controller.ts
+nest g gu auth/guards/jwt-auth --no-spec               # guards/jwt-auth.guard.ts
+nest g d auth/decorators/public --no-spec               # decorators/public.decorator.ts
+```
+
+| ส่วน | ความหมาย |
+|---|---|
+| `nest g` | ย่อมาจาก `nest generate` |
+| `mo`/`s`/`co`/`gu`/`d` | ย่อของ module/service/controller/guard/decorator |
+| `--no-spec` | ไม่ต้องสร้างไฟล์ `.spec.ts` (unit test) มาด้วย — คู่มือนี้ยังไม่ได้สอนเรื่อง testing |
+
+**ข้อควรรู้:** `nest g mo auth` จะไปแก้ `app.module.ts` ให้อัตโนมัติ (เพิ่ม `AuthModule` เข้า `imports`) — เปิดไฟล์เช็คดูว่า import ถูกเพิ่มจริงหลังรัน ส่วนไฟล์ที่ generate มาจะเป็น **เปลือกเปล่าๆ** (มีแค่ `@Module`/`@Injectable`/`@Controller` ว่างๆ) ต้องเข้าไปเติมโค้ดจริงตามขั้นตอนที่ 5 เอง
+
+**`dto/login.dto.ts` ไม่มี schematic เฉพาะ** — สร้างไฟล์ (โฟลเดอร์ `dto` ด้วย) ด้วยมือตามปกติ
 
 ---
 
