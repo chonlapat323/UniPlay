@@ -1,6 +1,6 @@
 # คู่มือเรียนรู้ระบบ Login (Authentication) แบบ Step-by-Step
 
-เอกสารนี้เป็น**เอกสารเพื่อเรียนรู้เท่านั้น ยังไม่มีการเขียนโค้ดจริง** — อธิบายแนวคิดและขั้นตอนทั้งหมดก่อน พอเข้าใจแล้วค่อยลงมือ implement จริงในโปรเจค `apps/api` ต่อไป
+เอกสารนี้อธิบายแนวคิดก่อน แล้วตามด้วย**โค้ดจริงที่ implement และทดสอบแล้วใน `apps/api`** — ทำตามหัวข้อ 5 ทีละขั้นแล้วจะได้ระบบ Login ที่ใช้งานได้จริงเหมือนใน `apps/api`
 
 > อ้างอิงจากเอกสารทางการ: https://docs.nestjs.com/security/authentication (เช็คก่อนเขียนคู่มือนี้)
 
@@ -141,15 +141,16 @@ src/
 
 ---
 
-## 5. ขั้นตอนแนวคิด (Concept Steps — ยังไม่ใช่โค้ดจริง)
+## 5. ขั้นตอนลงมือทำจริง (พร้อมโค้ดที่ทดสอบแล้ว)
 
-### ขั้นที่ 1 — ตั้งค่า JWT Secret
+### ขั้นที่ 1 — ตั้งค่า JWT Secret ใน `.env`
 
 ต้องมี "กุญแจลับ" ที่ server ใช้เซ็นและตรวจสอบ JWT — เก็บไว้ใน `.env` (ห้าม hardcode ในโค้ด ห้าม commit ขึ้น git):
 
 ```env
+# .env
 JWT_SECRET="<ค่าสุ่มยาวๆ ไม่ควรเดาได้>"
-JWT_EXPIRES_IN="1h"
+JWT_EXPIRES_IN_SECONDS="3600"
 ```
 
 **เทคนิคสร้างค่าสุ่มที่ปลอดภัย:** ใช้คำสั่ง
@@ -158,38 +159,236 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 จะได้ string สุ่ม 64 ตัวอักษร เอาไปใส่ใน `JWT_SECRET`
 
-### ขั้นที่ 2 — แก้ `UsersService` ให้ hash password ก่อนบันทึก
+**หมายเหตุ:** ใช้ `JWT_EXPIRES_IN_SECONDS` เป็น**ตัวเลขวินาที** (ไม่ใช่ string แบบ `"1h"`) เพราะ TypeScript type ของ `signOptions.expiresIn` ในเวอร์ชันที่โปรเจคนี้ใช้ไม่รับ string แบบนั้นตรงๆ — ใน `.env.example` ตั้งไว้ที่ `3600` (1 ชั่วโมง)
 
-ตอนสร้าง User ใหม่ (`create()` ใน `users.service.ts`) ต้อง hash password ด้วย `bcrypt.hash(password, 10)` **ก่อน** ส่งให้ Prisma บันทึกลง DB — ไม่ใช่บันทึก plain text แบบตอนนี้
+### ขั้นที่ 2 — ติดตั้ง package แล้วแก้ `UsersService` ให้ hash password ก่อนบันทึก
 
-**จุดสำคัญ:** เวลา return ข้อมูล User กลับไปหลัง create/find ต้อง**ไม่ส่ง field `password` กลับไปด้วย** (แม้จะเป็น hash แล้วก็ไม่ควรเห็น) — ใช้เทคนิค destructuring ตัด field ออกก่อน return
+ทำตามหัวข้อ 3 ติดตั้ง `@nestjs/jwt`, `bcrypt`, `@types/bcrypt` ก่อน จากนั้นแก้ `src/users/users.service.ts` ทั้งไฟล์เป็นแบบนี้:
 
-### ขั้นที่ 3 — สร้าง `AuthService` พร้อม method หลัก 2 ตัว
+```typescript
+// src/users/users.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
-**`validateUser(email, password)`:**
-1. หา User จาก email ผ่าน Prisma
-2. ถ้าไม่เจอ → return null (หรือ throw error)
-3. ถ้าเจอ → `bcrypt.compare(password, user.password)` เช็คว่ารหัสผ่านตรงไหม
-4. ถ้าตรง → return ข้อมูล user (ไม่รวม password)
+const SALT_ROUNDS = 10;
 
-**`login(user)`:**
-1. สร้าง payload: `{ sub: user.id, email: user.email, roleId: user.roleId }`
-2. ใช้ `jwtService.signAsync(payload)` สร้าง token
-3. return `{ access_token: token }`
+@Injectable()
+export class UsersService {
+  constructor(private prisma: PrismaService) {}
 
-### ขั้นที่ 4 — สร้าง `AuthController` — endpoint `POST /auth/login`
+  private stripPassword<T extends { password: string }>(user: T) {
+    const { password, ...safeUser } = user;
+    return safeUser;
+  }
 
-รับ `LoginDto { email, password }` → เรียก `authService.validateUser()` → ถ้าไม่ผ่าน throw `UnauthorizedException` → ถ้าผ่าน เรียก `authService.login()` → return token
+  async create(createUserDto: CreateUserDto) {
+    const hashedPassword = await bcrypt.hash(
+      createUserDto.password,
+      SALT_ROUNDS,
+    );
+    const user = await this.prisma.user.create({
+      data: { ...createUserDto, password: hashedPassword },
+    });
+    return this.stripPassword(user);
+  }
 
-### ขั้นที่ 5 — สร้าง `JwtAuthGuard`
+  async findAll() {
+    const users = await this.prisma.user.findMany();
+    return users.map((user) => this.stripPassword(user));
+  }
 
-Guard ที่:
-1. ดึง token จาก header `Authorization: Bearer <token>`
-2. ใช้ `jwtService.verifyAsync(token)` ตรวจสอบ signature + วันหมดอายุ
-3. ถ้าผ่าน → แนบ payload เข้า `request.user` ให้ controller อื่นเรียกใช้ต่อได้ (เช่น `@Req() req` แล้วอ่าน `req.user.roleId`)
-4. ถ้าไม่ผ่าน → throw `UnauthorizedException`
+  async findOne(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException(`User ${id} not found`);
+    return this.stripPassword(user);
+  }
 
-### ขั้นที่ 6 — ตัดสินใจ: ป้องกันทุก route โดย default หรือเลือกป้องกันทีละ route?
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    await this.findOne(id);
+    const data = { ...updateUserDto };
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, SALT_ROUNDS);
+    }
+    const user = await this.prisma.user.update({ where: { id }, data });
+    return this.stripPassword(user);
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    const user = await this.prisma.user.delete({ where: { id } });
+    return this.stripPassword(user);
+  }
+}
+```
+
+**จุดสำคัญ:** `stripPassword()` ตัด field `password` ออกก่อน return ทุกจุด (create/findAll/findOne/update/remove) — แม้จะเป็น hash แล้วก็ไม่ควรหลุดออกไปให้ client เห็น
+
+### ขั้นที่ 3 — สร้าง `LoginDto`
+
+```typescript
+// src/auth/dto/login.dto.ts
+import { IsEmail, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class LoginDto {
+  @ApiProperty({ example: 'student1@uniplay.test' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: 'mypassword123' })
+  @IsString()
+  password: string;
+}
+```
+
+### ขั้นที่ 4 — สร้าง `@Public()` Decorator
+
+ก่อนไปต่อ ต้องมี decorator นี้ก่อน เพราะ `AuthController` (ขั้นที่ 6) และ Guard (ขั้นที่ 7) ต้องใช้:
+
+```typescript
+// src/auth/decorators/public.decorator.ts
+import { SetMetadata } from '@nestjs/common';
+
+export const IS_PUBLIC_KEY = 'isPublic';
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+```
+
+Decorator เล็กๆ ที่แปะ metadata ไว้บน route (เช่น `POST /auth/login`, `POST /users` ตอนสมัครสมาชิกใหม่) บอก Guard ว่า "route นี้ไม่ต้องเช็ค token" — Guard ในขั้นที่ 7 จะเช็ค metadata นี้ก่อนตัดสินใจว่าจะบล็อกหรือปล่อยผ่าน
+
+### ขั้นที่ 5 — สร้าง `AuthService`
+
+```typescript
+// src/auth/auth.service.ts
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
+
+  async validateUser(email: string, password: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.password);
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const { password: _password, ...safeUser } = user;
+    return safeUser;
+  }
+
+  async login(user: { id: string; email: string; roleId: string }) {
+    const payload = { sub: user.id, email: user.email, roleId: user.roleId };
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+    };
+  }
+}
+```
+
+**`validateUser(email, password)`:** หา User จาก email → ถ้าไม่เจอหรือถูกปิดใช้งาน (`isActive: false`) throw `UnauthorizedException` → ถ้าเจอ ใช้ `bcrypt.compare(password, user.password)` เช็คว่ารหัสผ่านตรงกับ hash ที่เก็บไว้ไหม → ถ้าตรง ตัด `password` ออกแล้ว return user
+
+**`login(user)`:** สร้าง payload `{ sub: user.id, email: user.email, roleId: user.roleId }` แล้วใช้ `jwtService.signAsync(payload)` เซ็น token กลับไปเป็น `{ access_token }` — `sub` (subject) เป็นชื่อ field มาตรฐานของ JWT ที่หมายถึง "id ของเจ้าของ token"
+
+**ทำไม error message เดียวกันทั้ง 2 เคส (`Invalid credentials`):** กันไม่ให้คนร้ายรู้ว่า email ไหนมีอยู่จริงในระบบ (user enumeration attack) — ดู Security Checklist หัวข้อ 6
+
+### ขั้นที่ 6 — สร้าง `AuthController`
+
+```typescript
+// src/auth/auth.controller.ts
+import { Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import { Public } from './decorators/public.decorator';
+
+@ApiTags('auth')
+@Controller('auth')
+export class AuthController {
+  constructor(private authService: AuthService) {}
+
+  @ApiOperation({ summary: 'Login ด้วย email/password รับ JWT access_token กลับมา' })
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('login')
+  async login(@Body() loginDto: LoginDto) {
+    const user = await this.authService.validateUser(loginDto.email, loginDto.password);
+    return this.authService.login(user);
+  }
+}
+```
+
+`@HttpCode(HttpStatus.OK)` บังคับให้ตอบ `200 OK` แทน `201 Created` ที่ NestJS ใช้เป็น default ของ `@Post()` (login ไม่ได้ "สร้าง" อะไรใหม่ จึง `200` เหมาะกว่า) — `@Public()` เปิดให้เรียก route นี้ได้โดยไม่ต้องมี token อยู่แล้ว (ไม่งั้นจะ login ไม่ได้เพราะยังไม่มี token ตั้งแต่แรก)
+
+### ขั้นที่ 7 — สร้าง `JwtAuthGuard`
+
+```typescript
+// src/auth/guards/jwt-auth.guard.ts
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+
+@Injectable()
+export class JwtAuthGuard implements CanActivate {
+  constructor(
+    private jwtService: JwtService,
+    private reflector: Reflector,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(
+      IS_PUBLIC_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (isPublic) return true;
+
+    const request = context.switchToHttp().getRequest<Request>();
+    const token = this.extractTokenFromHeader(request);
+    if (!token) throw new UnauthorizedException('No token provided');
+
+    try {
+      const payload = await this.jwtService.verifyAsync(token);
+      (request as any).user = payload;
+    } catch {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+    return true;
+  }
+
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
+  }
+}
+```
+
+**อ่านทีละบรรทัด:**
+- `reflector.getAllAndOverride(IS_PUBLIC_KEY, [handler, class])` — เช็คว่า route (หรือทั้ง controller) ติดป้าย `@Public()` ไว้ไหม ถ้าใช่ ปล่อยผ่านทันที (`return true`) โดยไม่เช็ค token เลย
+- `extractTokenFromHeader()` — แกะ header `Authorization: Bearer <token>` เอาเฉพาะส่วน `<token>` ออกมา (ถ้า format ไม่ถูก หรือไม่มี header นี้เลย จะได้ `undefined`)
+- ไม่มี token → throw `UnauthorizedException('No token provided')` (`401`)
+- มี token → `jwtService.verifyAsync(token)` ตรวจสอบทั้ง signature (ไม่ถูกปลอมแปลง) และวันหมดอายุ พร้อมกันในคำสั่งเดียว — ถ้าไม่ผ่าน (signature ผิดหรือหมดอายุ) จะ throw exception ออกมา ซึ่งเราจับด้วย `catch` แล้วโยนเป็น `UnauthorizedException('Invalid or expired token')` ต่อ (`401`)
+- ผ่านหมด → เอา payload ที่ decode ได้ (มี `sub`, `email`, `roleId`) แนบเข้า `request.user` ให้ controller อื่นเรียกใช้ต่อได้ (เช่น `@Req() req` แล้วอ่าน `req.user.roleId`) แล้ว `return true` ปล่อยให้เข้า route ได้
+
+### ขั้นที่ 8 — ตัดสินใจ: ป้องกันทุก route โดย default หรือเลือกป้องกันทีละ route?
 
 มี 2 แนวทาง:
 
@@ -198,19 +397,157 @@ Guard ที่:
 | **A: Global Guard** (ป้องกันทุก route อัตโนมัติ ยกเว้นที่ติดป้าย `@Public()`) | ปลอดภัยกว่า — ลืมใส่ Guard ที่ route ใหม่ไม่ได้เพราะป้องกันอยู่แล้วโดย default | ต้องจำใส่ `@Public()` ที่ route ที่ตั้งใจเปิดให้เข้าได้โดยไม่ login |
 | **B: ใส่ทีละ route** (`@UseGuards(JwtAuthGuard)` เฉพาะ route ที่ต้องการ) | ควบคุมง่าย เห็นชัดในแต่ละไฟล์ | เสี่ยงลืมใส่ที่ route ใหม่ๆ กลายเป็นเปิดโล่งโดยไม่ตั้งใจ |
 
-**แนะนำ: แนวทาง A (Global Guard)** เพราะปลอดภัยกว่า (fail-safe — พลาดแล้วปิดไว้ก่อน ดีกว่าพลาดแล้วเปิดโล่ง) โดยเฉพาะโปรเจคนี้ที่มีข้อมูลอ่อนไหว (ข้อมูลสมาชิก, การจอง)
+**เลือกแนวทาง A (Global Guard)** เพราะปลอดภัยกว่า (fail-safe — พลาดแล้วปิดไว้ก่อน ดีกว่าพลาดแล้วเปิดโล่ง) โดยเฉพาะโปรเจคนี้ที่มีข้อมูลอ่อนไหว (ข้อมูลสมาชิก, การจอง) — นี่คือเหตุผลที่ต้องมี `@Public()` decorator จากขั้นที่ 4
 
-### ขั้นที่ 7 — สร้าง `@Public()` Decorator (ถ้าเลือกแนวทาง A)
+### ขั้นที่ 9 — ประกอบร่างเป็น `AuthModule`
 
-Decorator เล็กๆ ที่แปะ metadata ไว้บน route (เช่น `POST /auth/login`, `POST /users` ตอนสมัครสมาชิกใหม่) บอก Guard ว่า "route นี้ไม่ต้องเช็ค token" — Guard จะเช็ค metadata นี้ก่อนตัดสินใจว่าจะบล็อกหรือปล่อยผ่าน
+```typescript
+// src/auth/auth.module.ts
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { PrismaModule } from '../prisma/prisma.module';
 
-### ขั้นที่ 8 — ทดสอบ Flow เต็ม
+@Module({
+  imports: [
+    PrismaModule,
+    JwtModule.registerAsync({
+      global: true,
+      useFactory: () => ({
+        secret: process.env.JWT_SECRET,
+        signOptions: { expiresIn: Number(process.env.JWT_EXPIRES_IN_SECONDS) || 3600 },
+      }),
+    }),
+  ],
+  controllers: [AuthController],
+  providers: [AuthService, JwtAuthGuard],
+  exports: [JwtAuthGuard],
+})
+export class AuthModule {}
+```
 
-1. สร้าง User ใหม่ผ่าน `POST /users` (password จะถูก hash แล้ว)
-2. Login ผ่าน `POST /auth/login` ด้วย email/password เดิม → ได้ `access_token` กลับมา
-3. เรียก `GET /users` **โดยไม่แนบ token** → ควรได้ `401 Unauthorized`
-4. เรียก `GET /users` **พร้อมแนบ** `Authorization: Bearer <access_token>` → ควรได้ `200 OK`
-5. ลองแนบ token ที่แก้ไข/ปลอมมาเอง → ควรได้ `401 Unauthorized` (signature ไม่ตรง)
+`JwtModule.registerAsync({ global: true, ... })` — ตั้งค่า `JwtService` แบบ async เพราะต้องอ่านค่าจาก `process.env` (`useFactory`) และตั้ง `global: true` ให้ module อื่น (เช่น `AppModule` ที่จะใช้ `JwtAuthGuard`) inject `JwtService` ได้โดยไม่ต้อง import `JwtModule` ซ้ำ — `exports: [JwtAuthGuard]` เพราะ `AppModule` (ขั้นที่ 10) ต้องเอา `JwtAuthGuard` ไปตั้งเป็น global guard
+
+### ขั้นที่ 10 — ตั้ง `JwtAuthGuard` เป็น Global Guard ใน `AppModule`
+
+```typescript
+// src/app.module.ts
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { PrismaModule } from './prisma/prisma.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+
+@Module({
+  imports: [PrismaModule, UsersModule, AuthModule],
+  controllers: [AppController],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
+})
+export class AppModule {}
+```
+
+Provider พิเศษ `{ provide: APP_GUARD, useClass: JwtAuthGuard }` คือวิธีมาตรฐานของ NestJS ในการติดตั้ง Guard ให้ทำงานกับ**ทุก route ในแอปทั้งหมด** โดยอัตโนมัติ (ไม่ต้องไปแปะ `@UseGuards()` ทีละ controller)
+
+### ขั้นที่ 11 — เปิด `@Public()` เฉพาะ route ที่ควรเข้าได้โดยไม่ login
+
+ใน `src/users/users.controller.ts` มีแค่ `create()` (`POST /users` — สมัครสมาชิกใหม่) ที่ควรเปิดให้เข้าได้โดยไม่ต้อง login (ยังไม่มี token จะเอามาจากไหนตอนสมัครครั้งแรก) ส่วน `findAll`, `findOne`, `update`, `remove` ต้อง login ก่อน:
+
+```typescript
+// src/users/users.controller.ts
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Patch,
+  Delete,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { Public } from '../auth/decorators/public.decorator';
+
+@ApiTags('users')
+@Controller('users')
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  // TODO: เปิด public ไว้ชั่วคราวเพื่อ bootstrap user แรกได้ก่อนมี token
+  // พอทำ RBAC (PermissionsGuard) เสร็จ ต้องเปลี่ยนเป็นจำกัดสิทธิ์เฉพาะ Staff/Admin เท่านั้น
+  @ApiOperation({ summary: 'สร้างสมาชิกใหม่ (ไม่ต้อง login)' })
+  @Public()
+  @Post()
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'ดึงรายการสมาชิกทั้งหมด' })
+  @Get()
+  findAll() {
+    return this.usersService.findAll();
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'ดึงสมาชิกทีละคนตาม id' })
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'แก้ไขข้อมูลสมาชิก' })
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(id, updateUserDto);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'ลบสมาชิก' })
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.usersService.remove(id);
+  }
+}
+```
+
+`@ApiBearerAuth()` ไม่ได้เกี่ยวกับการเช็ค token จริง (นั้นเป็นหน้าที่ของ `JwtAuthGuard` ที่ทำงานอยู่แล้วแบบ global) — มันแค่บอก Swagger UI ให้วาดรูปกุญแจ 🔒 ที่ route นี้และรู้ว่าต้องแนบ token ตอนกด "Try it out" (รายละเอียดเต็มอยู่ใน `SWAGGER_GUIDE.md`)
+
+### ขั้นที่ 12 — ทดสอบ Flow เต็มด้วย curl
+
+```bash
+# 1) สร้าง User ใหม่ (ต้องมี roleId จริงจาก table role ก่อน)
+curl -X POST http://localhost:3000/users \
+  -H "Content-Type: application/json" \
+  -d '{"email":"student1@uniplay.test","password":"mypassword123","name":"Somchai","roleId":"<roleId จริง>"}'
+
+# 2) เรียก GET /users โดยไม่แนบ token → ควรได้ 401 Unauthorized
+curl -i http://localhost:3000/users
+
+# 3) Login ด้วย email/password เดิม → ได้ access_token กลับมา
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"student1@uniplay.test","password":"mypassword123"}'
+
+# 4) เรียก GET /users พร้อมแนบ token → ควรได้ 200 OK
+curl http://localhost:3000/users \
+  -H "Authorization: Bearer <access_token จากขั้นที่ 3>"
+```
+
+ผลที่ควรได้ตรงกับที่ทดสอบไว้จริงตอนเขียนคู่มือนี้: ขั้น 2 ตอบ `401 {"message":"No token provided",...}`, ขั้น 3 ตอบ `{"access_token":"eyJ..."}`, ขั้น 4 ตอบ `200` พร้อมรายการ user (ไม่มี field `password` ติดมา)
 
 ---
 
