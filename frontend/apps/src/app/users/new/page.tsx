@@ -46,7 +46,7 @@ export default function NewUserPage() {
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mb-4 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
           placeholder="Somchai"
         />
 
@@ -59,7 +59,7 @@ export default function NewUserPage() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mb-4 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
           placeholder="student1@uniplay.test"
         />
 
@@ -72,7 +72,7 @@ export default function NewUserPage() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mb-4 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
           placeholder="********"
         />
 
@@ -83,7 +83,7 @@ export default function NewUserPage() {
           id="roleId"
           value={roleId}
           onChange={(e) => setRoleId(e.target.value)}
-          className="mb-6 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mb-6 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
         >
           {ROLES.map((role) => (
             <option key={role.id} value={role.id}>

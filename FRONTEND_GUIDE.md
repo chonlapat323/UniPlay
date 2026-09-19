@@ -59,11 +59,36 @@ npx create-next-app@latest apps --typescript --tailwind --eslint --app --src-dir
 
 รันคำสั่งนี้จากโฟลเดอร์ `frontend/` ที่ root ของ repo (สร้างโฟลเดอร์นี้ก่อนถ้ายังไม่มี) จะได้ `frontend/apps` — ระหว่างรัน CLI จะถามหลายคำถาม ตอบตามค่าที่ flag กำหนดไว้ได้เลย (หรือ flag ครบแล้วจะไม่ถามซ้ำ)
 
+> **ถ้าทำตามคู่มือนี้ในโฟลเดอร์ `frontend/ex` (ที่ฝึกของนักเรียน): ข้ามขั้นตอนนี้ไปเลย** เพราะ `frontend/ex` มี scaffold เปล่าๆ เตรียมไว้ให้แล้ว (สร้างล่วงหน้าด้วยคำสั่งเดียวกันนี้ แค่เปลี่ยนชื่อท้ายคำสั่งจาก `apps` เป็น `ex`) ให้เริ่มทำตามตั้งแต่หัวข้อ 2 เป็นต้นไปในโฟลเดอร์นั้นได้ทันที — คำสั่งนี้จำเป็นเฉพาะตอนสร้างโปรเจคใหม่ตั้งแต่ศูนย์เท่านั้น (เช่น ตอนสร้าง `frontend/apps` ครั้งแรก หรือถ้าจะสาธิตให้นักเรียนดูวิธีเริ่มโปรเจคจริงๆ ตั้งแต่ต้น) **ห้ามรันซ้ำใส่โฟลเดอร์ที่มีไฟล์อยู่แล้ว** เพราะ `create-next-app` จะปฏิเสธทันทีถ้าเจอไฟล์เดิมค้างอยู่ในโฟลเดอร์ปลายทาง — ถ้าต้องการรันจริงๆ (ลบของเดิมทิ้งแล้วเริ่มใหม่) ต้องลบโฟลเดอร์ปลายทางทิ้งก่อน
+
 **เช็คว่าไม่มีช่องโหว่ความปลอดภัยหลงเหลือ:**
 ```bash
 npm audit
 ```
 ควรขึ้น `found 0 vulnerabilities`
+
+### 1.1 เทคนิคช่วยพิมพ์โครงหน้าใหม่เร็วขึ้น (ไม่บังคับ)
+
+Next.js ไม่มี CLI สำหรับสร้างหน้าใหม่ (ต่างจาก `nest g` ฝั่ง backend — ดู `AUTH_GUIDE.md`) ต้องสร้างไฟล์ `page.tsx` เปล่าๆ เองเสมอ ซึ่งถ้าปล่อยว่างไว้จะ **error ทันที** เพราะ Next.js บังคับให้ทุกไฟล์ `page.tsx` ต้องมี `export default` เป็น React component
+
+ติดตั้ง VS Code extension ชื่อ **"ES7+ React/Redux/React-Native Snippets"** แล้วในไฟล์ `.tsx` เปล่าๆ พิมพ์:
+```
+rafce
+```
+แล้วกด `Tab` — จะได้โครง component ขั้นต่ำขึ้นมาอัตโนมัติ (ตั้งชื่อ function ตามชื่อไฟล์ให้เลย):
+```typescript
+import React from 'react'
+
+const page = () => {
+  return (
+    <div>page</div>
+  )
+}
+
+export default page
+```
+
+**ข้อควรรู้:** โครงจาก `rafce` เป็น component เปล่าๆ ธรรมดา **ยังไม่มี** `'use client'`, `useState`, event handler ฯลฯ ที่หน้า Login/สมัครสมาชิกในคู่มือนี้ต้องใช้ (ดูหัวข้อ 8-9) — snippet นี้แค่ช่วยลดพิมพ์โครง `export default function` ซ้ำๆ ทุกไฟล์เท่านั้น ส่วนโค้ดจริงข้างในยังต้องเขียน/copy ตามคู่มือต่อเอง
 
 ---
 
@@ -322,7 +347,7 @@ export default function LoginPage() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mb-4 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
           placeholder="student1@uniplay.test"
         />
 
@@ -335,7 +360,7 @@ export default function LoginPage() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mb-6 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mb-6 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
           placeholder="********"
         />
 
@@ -367,6 +392,7 @@ export default function LoginPage() {
 - **`handleSubmit`** — เรียกตอนกด submit ฟอร์ม: เรียก `login()` จาก `lib/api.ts` → ถ้าสำเร็จ เก็บ token ด้วย `saveToken()` แล้วพาไปหน้าแรก (`router.push('/')`) → ถ้า error (เช่น password ผิด) โชว์ข้อความ error ให้เห็น
 - **`e.preventDefault()`** — ฟอร์ม HTML ปกติพอกด submit จะ reload หน้าทั้งหน้าทันที (behavior ดั้งเดิมของเบราว์เซอร์) ต้องเรียกตัวนี้เพื่อบล็อกไว้ แล้วจัดการ submit ด้วย JavaScript (`fetch`) เองแทน
 - **`useRouter()` + `router.push('/')`** — เปลี่ยนหน้าแบบ client-side (ไม่ reload ทั้งหน้า) ของ Next.js App Router
+- **`bg-white text-gray-900` บน `<input>` ทุกตัว (สำคัญ อย่าลืมใส่):** ถ้าไม่ใส่ ตัวหนังสือที่พิมพ์ในฟอร์มจะ**มองไม่เห็น**บนเครื่องที่เปิด dark mode ไว้ — เพราะ `globals.css` (จาก scaffold) ตั้ง `body { color: var(--foreground) }` ไว้ที่ระดับ `<body>` และ `--foreground` เปลี่ยนเป็นสีเกือบขาว (`#ededed`) อัตโนมัติเมื่อ `prefers-color-scheme: dark` — `<input>` ไม่ได้กำหนดสีตัวเองจึง**สืบทอด**สีนี้มาจาก `<body>` ทำให้กลายเป็นตัวหนังสือสีเกือบขาวบนกล่อง input พื้นขาว (มองไม่เห็นตัวอักษรที่พิมพ์) การใส่ `bg-white text-gray-900` ตรงๆ ที่ `<input>` คือการบังคับสีให้คงที่ ไม่ขึ้นกับโหมดของเครื่องผู้ใช้
 
 ---
 
@@ -422,7 +448,7 @@ export default function NewUserPage() {
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mb-4 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
           placeholder="Somchai"
         />
 
@@ -435,7 +461,7 @@ export default function NewUserPage() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mb-4 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
           placeholder="student1@uniplay.test"
         />
 
@@ -448,7 +474,7 @@ export default function NewUserPage() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mb-4 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
           placeholder="********"
         />
 
@@ -459,7 +485,7 @@ export default function NewUserPage() {
           id="roleId"
           value={roleId}
           onChange={(e) => setRoleId(e.target.value)}
-          className="mb-6 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mb-6 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
         >
           {ROLES.map((role) => (
             <option key={role.id} value={role.id}>
