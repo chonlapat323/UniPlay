@@ -1,16 +1,12 @@
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { createUser, ApiError } from '../lib/api';
 import { ROLES } from '../lib/roles';
+import Button from '../components/Button';
+import TextField from '../components/TextField';
+import { colors, spacing, radius, fontSize } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -40,26 +36,23 @@ export default function RegisterScreen({ navigation }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>สมัครสมาชิก</Text>
 
-      <Text style={styles.label}>ชื่อ</Text>
-      <TextInput value={name} onChangeText={setName} placeholder="Somchai" style={styles.input} />
+      <TextField label="ชื่อ" value={name} onChangeText={setName} placeholder="Somchai" />
 
-      <Text style={styles.label}>Email</Text>
-      <TextInput
+      <TextField
+        label="Email"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
         placeholder="student1@uniplay.test"
-        style={styles.input}
       />
 
-      <Text style={styles.label}>Password</Text>
-      <TextInput
+      <TextField
+        label="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
         placeholder="********"
-        style={styles.input}
       />
 
       <Text style={styles.label}>บทบาท</Text>
@@ -77,15 +70,9 @@ export default function RegisterScreen({ navigation }: Props) {
         ))}
       </View>
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && <Text style={styles.formError}>{error}</Text>}
 
-      <Pressable style={styles.button} onPress={handleSubmit} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>สมัครสมาชิก</Text>
-        )}
-      </Pressable>
+      <Button title="สมัครสมาชิก" onPress={handleSubmit} loading={loading} style={styles.submitButton} />
 
       <Pressable onPress={() => navigation.navigate('Login')}>
         <Text style={styles.link}>มีบัญชีแล้ว? เข้าสู่ระบบ</Text>
@@ -95,81 +82,22 @@ export default function RegisterScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#f9fafb',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 24,
-    color: '#111827',
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 4,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    marginBottom: 16,
-    backgroundColor: '#fff',
-    color: '#111827',
-  },
-  roleRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
+  container: { flex: 1, justifyContent: 'center', padding: spacing.lg, backgroundColor: colors.background },
+  title: { fontSize: fontSize.title, fontWeight: '600', marginBottom: spacing.lg, color: colors.text },
+  label: { fontSize: fontSize.base, fontWeight: '500', color: colors.label, marginBottom: spacing.xs },
+  roleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
   roleChip: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#fff',
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md - 4,
+    paddingVertical: spacing.xs + 2,
+    backgroundColor: colors.surface,
   },
-  roleChipActive: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
-  },
-  roleChipText: {
-    fontSize: 13,
-    color: '#374151',
-  },
-  roleChipTextActive: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  error: {
-    color: '#dc2626',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  button: {
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  link: {
-    color: '#2563eb',
-    textAlign: 'center',
-    fontSize: 14,
-  },
+  roleChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  roleChipText: { fontSize: fontSize.sm, color: colors.label },
+  roleChipTextActive: { color: colors.primaryText, fontWeight: '600' },
+  formError: { color: colors.error, fontSize: fontSize.base, marginBottom: spacing.md },
+  submitButton: { marginBottom: spacing.md },
+  link: { color: colors.link, textAlign: 'center', fontSize: fontSize.base },
 });

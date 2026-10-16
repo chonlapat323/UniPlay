@@ -76,7 +76,7 @@ npx create-expo-app@latest apps --template blank-typescript
 ```bash
 npm audit
 ```
-ตอนเขียนคู่มือนี้จะเห็น **10 moderate severity vulnerabilities** ทั้งหมดมาจาก `xcode` package (ใช้ตอน generate โปรเจค iOS native เท่านั้น) ที่ซ่อนอยู่ลึกใน dependency chain ของ `@expo/cli` เอง — **เป็นปัญหาของทั้ง ecosystem Expo ในเวอร์ชันปัจจุบัน ยังไม่มี patch เสถียรจากทีม Expo** (เช็คแล้วตอนเขียนคู่มือนี้) เป็น dev-tooling เท่านั้น **ไม่ได้ติดไปกับแอปที่ build จริงส่งให้ผู้ใช้** จึงรับความเสี่ยงนี้ไว้ก่อนได้ ไม่ต้องพยายาม `npm audit fix --force` (จะพังเวอร์ชันที่ Expo pin ไว้ให้เข้ากันพอดี)
+ตอนเขียนคู่มือนี้ (ก่อนติดตั้ง `react-dom`/`react-native-web` ในหัวข้อ 2) จะเห็น **10 moderate severity vulnerabilities** ทั้งหมดมาจาก `xcode` package (ใช้ตอน generate โปรเจค iOS native เท่านั้น) ที่ซ่อนอยู่ลึกใน dependency chain ของ `@expo/cli` เอง — **เป็นปัญหาของทั้ง ecosystem Expo ในเวอร์ชันปัจจุบัน ยังไม่มี patch เสถียรจากทีม Expo** (เช็คแล้วตอนเขียนคู่มือนี้) เป็น dev-tooling เท่านั้น **ไม่ได้ติดไปกับแอปที่ build จริงส่งให้ผู้ใช้** จึงรับความเสี่ยงนี้ไว้ก่อนได้ ไม่ต้องพยายาม `npm audit fix --force` (จะพังเวอร์ชันที่ Expo pin ไว้ให้เข้ากันพอดี) — **พอติดตั้ง web support ในหัวข้อ 2 แล้วตัวเลขจะเพิ่มเป็น 23 ตัว (7 moderate, 16 high)** เพราะดึง dependency chain ของ Metro bundler (`metro`, `metro-config`, `braces`, `micromatch` ฯลฯ) เข้ามาเพิ่ม — ยังคงเป็น dev-tooling ล้วนๆ เหมือนเดิม (ตัวที่ใช้ compile/serve โค้ดตอน dev เท่านั้น ไม่ได้ติดไปกับแอปที่ build จริง) รับความเสี่ยงนี้ไว้ได้เหมือนกัน
 
 ---
 
@@ -85,6 +85,7 @@ npm audit
 ```bash
 npx expo install @react-navigation/native @react-navigation/native-stack react-native-screens react-native-safe-area-context
 npx expo install @react-native-async-storage/async-storage
+npx expo install react-dom react-native-web
 ```
 
 | Package | ใช้ทำอะไร |
@@ -93,6 +94,7 @@ npx expo install @react-native-async-storage/async-storage
 | `@react-navigation/native-stack` | รูปแบบการเปลี่ยนหน้าแบบ "ซ้อนสแตก" (เปิดหน้าใหม่ทับ, กด back ย้อนกลับ) เหมือน native app ทั่วไป |
 | `react-native-screens`, `react-native-safe-area-context` | Dependency พื้นฐานที่ React Navigation ต้องใช้ (จัดการพื้นที่หน้าจอให้ไม่ชนกับ notch/status bar) |
 | `@react-native-async-storage/async-storage` | ที่เก็บข้อมูลแบบถาวรบนมือถือ (เทียบเท่า `localStorage` ของเว็บ — ใช้เก็บ `access_token`) |
+| `react-dom`, `react-native-web` | ให้โปรเจครันผ่าน `npm run web` ได้ (ดูหัวข้อ 12) — จำเป็นถ้าอยากทดสอบผ่านเบราว์เซอร์โดยไม่ต้องมี emulator/มือถือ ถ้าไม่ติดตั้งไว้ก่อน `npm run web` จะ error ทันทีว่าขาด dependency |
 
 > **ทำไมใช้ `npx expo install` แทน `npm install` ธรรมดา:** `expo install` จะเลือกเวอร์ชันของแต่ละ package ให้ **ตรงกับ Expo SDK ที่โปรเจคใช้อยู่โดยอัตโนมัติ** (เช่น SDK 57 ต้องการ `react-native-screens` เวอร์ชันที่ตรงกันเป๊ะ) ถ้าใช้ `npm install` เฉยๆ อาจได้เวอร์ชันล่าสุดที่ไม่ compatible กับ SDK ปัจจุบัน แล้ว native module พังตอนรันจริง
 

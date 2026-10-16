@@ -1,9 +1,11 @@
 import { useCallback, useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { clearToken, getToken } from '../lib/token';
+import Button from '../components/Button';
+import { colors, spacing, fontSize } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -28,18 +30,16 @@ export default function HomeScreen({ navigation }: Props) {
       {hasToken ? (
         <>
           <Text style={styles.subtitle}>เข้าสู่ระบบแล้ว (มี access_token เก็บอยู่)</Text>
-          <Pressable style={styles.buttonSecondary} onPress={handleLogout}>
-            <Text style={styles.buttonSecondaryText}>ออกจากระบบ</Text>
-          </Pressable>
+          <Button title="ออกจากระบบ" variant="secondary" onPress={handleLogout} />
         </>
       ) : (
         <View style={styles.row}>
-          <Pressable style={styles.button} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.buttonText}>เข้าสู่ระบบ</Text>
-          </Pressable>
-          <Pressable style={styles.buttonSecondary} onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.buttonSecondaryText}>สมัครสมาชิก</Text>
-          </Pressable>
+          <Button title="เข้าสู่ระบบ" onPress={() => navigation.navigate('Login')} />
+          <Button
+            title="สมัครสมาชิก"
+            variant="secondary"
+            onPress={() => navigation.navigate('Register')}
+          />
         </View>
       )}
     </View>
@@ -51,43 +51,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#f9fafb',
-    gap: 16,
+    padding: spacing.lg,
+    backgroundColor: colors.background,
+    gap: spacing.md,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#4b5563',
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  button: {
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  buttonSecondary: {
-    backgroundColor: '#e5e7eb',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  buttonSecondaryText: {
-    color: '#1f2937',
-    fontWeight: '600',
-    fontSize: 14,
-  },
+  title: { fontSize: fontSize.title, fontWeight: '600', color: colors.text },
+  subtitle: { fontSize: fontSize.base, color: colors.textMuted },
+  row: { flexDirection: 'row', gap: spacing.sm + 4 },
 });
