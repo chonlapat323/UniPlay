@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text, TextInput, Button, HelperText } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { login, ApiError } from '../lib/api';
 import { saveToken } from '../lib/token';
-import Button from '../components/Button';
-import TextField from '../components/TextField';
-import { colors, spacing, fontSize } from '../theme';
+import AppHeader from '../components/AppHeader';
+import AppFooter from '../components/AppFooter';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('ui.test@uniplay.test');
   const [password, setPassword] = useState('password123');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -32,41 +33,63 @@ export default function LoginScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>เข้าสู่ระบบ</Text>
+    <View style={styles.screen}>
+      <AppHeader title="เข้าสู่ระบบ" onBack={() => navigation.navigate('Home')} />
 
-      <TextField
+      <View style={styles.container}>
+      <Text variant="bodyMedium" style={styles.subtitle}>
+        ยินดีต้อนรับกลับมา กรอกข้อมูลเพื่อเข้าใช้งาน
+      </Text>
+
+      <TextInput
         label="Email"
         value={email}
         onChangeText={setEmail}
+        mode="outlined"
         autoCapitalize="none"
         keyboardType="email-address"
-        placeholder="student1@uniplay.test"
+        left={<TextInput.Icon icon="email-outline" />}
+        style={styles.field}
       />
 
-      <TextField
+      <TextInput
         label="Password"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
-        placeholder="********"
+        mode="outlined"
+        secureTextEntry={!showPassword}
+        error={!!error}
+        left={<TextInput.Icon icon="lock-outline" />}
+        right={
+          <TextInput.Icon
+            icon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+            onPress={() => setShowPassword((prev) => !prev)}
+          />
+        }
+        style={styles.field}
       />
+      <HelperText type="error" visible={!!error}>
+        {error}
+      </HelperText>
 
-      {error && <Text style={styles.formError}>{error}</Text>}
+      <Button mode="contained" onPress={handleSubmit} loading={loading} disabled={loading} style={styles.submitButton}>
+        เข้าสู่ระบบ
+      </Button>
 
-      <Button title="เข้าสู่ระบบ" onPress={handleSubmit} loading={loading} style={styles.submitButton} />
+      <Button mode="text" onPress={() => navigation.navigate('Register')}>
+        ยังไม่มีบัญชี? สมัครสมาชิก
+      </Button>
+      </View>
 
-      <Pressable onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.link}>ยังไม่มีบัญชี? สมัครสมาชิก</Text>
-      </Pressable>
+      <AppFooter />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: spacing.lg, backgroundColor: colors.background },
-  title: { fontSize: fontSize.title, fontWeight: '600', marginBottom: spacing.lg, color: colors.text },
-  formError: { color: colors.error, fontSize: fontSize.base, marginBottom: spacing.md },
-  submitButton: { marginBottom: spacing.md },
-  link: { color: colors.link, textAlign: 'center', fontSize: fontSize.base },
+  screen: { flex: 1 },
+  container: { flex: 1, justifyContent: 'center', padding: 24 },
+  subtitle: { marginBottom: 24, color: '#6b7280' },
+  field: { marginBottom: 8 },
+  submitButton: { marginTop: 8, marginBottom: 8, paddingVertical: 4 },
 });

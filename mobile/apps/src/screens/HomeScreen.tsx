@@ -1,16 +1,19 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text, Button } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { clearToken, getToken } from '../lib/token';
-import Button from '../components/Button';
-import { colors, spacing, fontSize } from '../theme';
+import AppHeader from '../components/AppHeader';
+import AppFooter from '../components/AppFooter';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
   const [hasToken, setHasToken] = useState(false);
+  const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -18,44 +21,65 @@ export default function HomeScreen({ navigation }: Props) {
     }, []),
   );
 
-  async function handleLogout() {
+  async function handleConfirmLogout() {
+    setLogoutConfirmVisible(false);
     await clearToken();
     navigation.replace('Login');
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>UniPlay Admin</Text>
+    <View style={styles.screen}>
+      <AppHeader title="UniPlay Admin" />
 
-      {hasToken ? (
-        <>
-          <Text style={styles.subtitle}>เข้าสู่ระบบแล้ว (มี access_token เก็บอยู่)</Text>
-          <Button title="ออกจากระบบ" variant="secondary" onPress={handleLogout} />
-        </>
-      ) : (
-        <View style={styles.row}>
-          <Button title="เข้าสู่ระบบ" onPress={() => navigation.navigate('Login')} />
-          <Button
-            title="สมัครสมาชิก"
-            variant="secondary"
-            onPress={() => navigation.navigate('Register')}
-          />
-        </View>
-      )}
+      <View style={styles.container}>
+        {hasToken ? (
+          <>
+            <Text variant="bodyMedium" style={styles.subtitle}>
+              เข้าสู่ระบบแล้ว (มี access_token เก็บอยู่)
+            </Text>
+            <Button mode="outlined" onPress={() => setLogoutConfirmVisible(true)}>
+              ออกจากระบบ
+            </Button>
+          </>
+        ) : (
+          <View style={styles.row}>
+            <Button mode="contained" onPress={() => navigation.navigate('Login')}>
+              เข้าสู่ระบบ
+            </Button>
+            <Button mode="outlined" onPress={() => navigation.navigate('Register')}>
+              สมัครสมาชิก
+            </Button>
+          </View>
+        )}
+
+        <Button mode="text" onPress={() => navigation.navigate('UiKit')}>
+          ดูตัวอย่าง UI Kit
+        </Button>
+      </View>
+
+      <AppFooter />
+
+      <ConfirmDialog
+        visible={logoutConfirmVisible}
+        title="ออกจากระบบ"
+        message="ต้องการออกจากระบบใช่ไหม? ต้อง login ใหม่ถึงจะใช้งานต่อได้"
+        confirmLabel="ออกจากระบบ"
+        onConfirm={handleConfirmLogout}
+        onCancel={() => setLogoutConfirmVisible(false)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.lg,
-    backgroundColor: colors.background,
-    gap: spacing.md,
+    padding: 24,
+    gap: 16,
   },
-  title: { fontSize: fontSize.title, fontWeight: '600', color: colors.text },
-  subtitle: { fontSize: fontSize.base, color: colors.textMuted },
-  row: { flexDirection: 'row', gap: spacing.sm + 4 },
+  subtitle: { color: '#4b5563' },
+  row: { flexDirection: 'row', gap: 12 },
 });

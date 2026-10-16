@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text, TextInput, Button, HelperText, Menu } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { createUser, ApiError } from '../lib/api';
 import { ROLES } from '../lib/roles';
-import Button from '../components/Button';
-import TextField from '../components/TextField';
-import { colors, spacing, radius, fontSize } from '../theme';
+import AppHeader from '../components/AppHeader';
+import AppFooter from '../components/AppFooter';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -14,9 +14,13 @@ export default function RegisterScreen({ navigation }: Props) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [roleId, setRoleId] = useState(ROLES[0].id);
+  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const selectedRole = ROLES.find((role) => role.id === roleId);
 
   async function handleSubmit() {
     setError(null);
@@ -33,71 +37,99 @@ export default function RegisterScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>สมัครสมาชิก</Text>
+    <View style={styles.screen}>
+      <AppHeader title="สมัครสมาชิก" onBack={() => navigation.navigate('Home')} />
 
-      <TextField label="ชื่อ" value={name} onChangeText={setName} placeholder="Somchai" />
+      <View style={styles.container}>
+      <Text variant="bodyMedium" style={styles.subtitle}>
+        สร้างบัญชีใหม่เพื่อเริ่มใช้งาน UniPlay
+      </Text>
 
-      <TextField
+      <TextInput
+        label="ชื่อ"
+        value={name}
+        onChangeText={setName}
+        mode="outlined"
+        left={<TextInput.Icon icon="account-outline" />}
+        style={styles.field}
+      />
+
+      <TextInput
         label="Email"
         value={email}
         onChangeText={setEmail}
+        mode="outlined"
         autoCapitalize="none"
         keyboardType="email-address"
-        placeholder="student1@uniplay.test"
+        left={<TextInput.Icon icon="email-outline" />}
+        style={styles.field}
       />
 
-      <TextField
+      <TextInput
         label="Password"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
-        placeholder="********"
+        mode="outlined"
+        secureTextEntry={!showPassword}
+        left={<TextInput.Icon icon="lock-outline" />}
+        right={
+          <TextInput.Icon
+            icon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+            onPress={() => setShowPassword((prev) => !prev)}
+          />
+        }
+        style={styles.field}
       />
 
-      <Text style={styles.label}>บทบาท</Text>
-      <View style={styles.roleRow}>
-        {ROLES.map((role) => (
-          <Pressable
-            key={role.id}
-            onPress={() => setRoleId(role.id)}
-            style={[styles.roleChip, roleId === role.id && styles.roleChipActive]}
+      <Menu
+        visible={roleMenuOpen}
+        onDismiss={() => setRoleMenuOpen(false)}
+        anchor={
+          <Button
+            mode="outlined"
+            icon="shield-account-outline"
+            onPress={() => setRoleMenuOpen(true)}
+            style={styles.roleButton}
           >
-            <Text style={[styles.roleChipText, roleId === role.id && styles.roleChipTextActive]}>
-              {role.name}
-            </Text>
-          </Pressable>
+            บทบาท: {selectedRole?.name}
+          </Button>
+        }
+      >
+        {ROLES.map((role) => (
+          <Menu.Item
+            key={role.id}
+            title={role.name}
+            onPress={() => {
+              setRoleId(role.id);
+              setRoleMenuOpen(false);
+            }}
+          />
         ))}
+      </Menu>
+
+      <HelperText type="error" visible={!!error}>
+        {error}
+      </HelperText>
+
+      <Button mode="contained" onPress={handleSubmit} loading={loading} disabled={loading} style={styles.submitButton}>
+        สมัครสมาชิก
+      </Button>
+
+      <Button mode="text" onPress={() => navigation.navigate('Login')}>
+        มีบัญชีแล้ว? เข้าสู่ระบบ
+      </Button>
       </View>
 
-      {error && <Text style={styles.formError}>{error}</Text>}
-
-      <Button title="สมัครสมาชิก" onPress={handleSubmit} loading={loading} style={styles.submitButton} />
-
-      <Pressable onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.link}>มีบัญชีแล้ว? เข้าสู่ระบบ</Text>
-      </Pressable>
+      <AppFooter />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: spacing.lg, backgroundColor: colors.background },
-  title: { fontSize: fontSize.title, fontWeight: '600', marginBottom: spacing.lg, color: colors.text },
-  label: { fontSize: fontSize.base, fontWeight: '500', color: colors.label, marginBottom: spacing.xs },
-  roleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
-  roleChip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md - 4,
-    paddingVertical: spacing.xs + 2,
-    backgroundColor: colors.surface,
-  },
-  roleChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  roleChipText: { fontSize: fontSize.sm, color: colors.label },
-  roleChipTextActive: { color: colors.primaryText, fontWeight: '600' },
-  formError: { color: colors.error, fontSize: fontSize.base, marginBottom: spacing.md },
-  submitButton: { marginBottom: spacing.md },
-  link: { color: colors.link, textAlign: 'center', fontSize: fontSize.base },
+  screen: { flex: 1 },
+  container: { flex: 1, justifyContent: 'center', padding: 24 },
+  subtitle: { marginBottom: 24, color: '#6b7280' },
+  field: { marginBottom: 8 },
+  roleButton: { marginTop: 8, marginBottom: 8, alignSelf: 'flex-start' },
+  submitButton: { marginTop: 8, marginBottom: 8, paddingVertical: 4 },
 });
