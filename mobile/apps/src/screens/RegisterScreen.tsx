@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, TextInput, Button, HelperText, Menu } from 'react-native-paper';
+import { Text, TextInput, Button, HelperText, Menu, useTheme } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { createUser, ApiError } from '../lib/api';
@@ -11,6 +11,7 @@ import AppFooter from '../components/AppFooter';
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
 export default function RegisterScreen({ navigation }: Props) {
+  const theme = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,7 +42,7 @@ export default function RegisterScreen({ navigation }: Props) {
       <AppHeader title="สมัครสมาชิก" onBack={() => navigation.navigate('Home')} />
 
       <View style={styles.container}>
-      <Text variant="bodyMedium" style={styles.subtitle}>
+      <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
         สร้างบัญชีใหม่เพื่อเริ่มใช้งาน UniPlay
       </Text>
 
@@ -128,7 +129,7 @@ export default function RegisterScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   container: { flex: 1, justifyContent: 'center', padding: 24 },
-  subtitle: { marginBottom: 24, color: '#6b7280' },
+  subtitle: { marginBottom: 24 },
   field: { marginBottom: 8 },
   roleButton: { marginTop: 8, marginBottom: 8, alignSelf: 'flex-start' },
   submitButton: { marginTop: 8, marginBottom: 8, paddingVertical: 4 },

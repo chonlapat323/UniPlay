@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, TextInput, Button, HelperText } from 'react-native-paper';
+import { Text, TextInput, Button, HelperText, useTheme } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { login, ApiError } from '../lib/api';
@@ -11,6 +11,7 @@ import AppFooter from '../components/AppFooter';
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
+  const theme = useTheme();
   const [email, setEmail] = useState('ui.test@uniplay.test');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +38,7 @@ export default function LoginScreen({ navigation }: Props) {
       <AppHeader title="เข้าสู่ระบบ" onBack={() => navigation.navigate('Home')} />
 
       <View style={styles.container}>
-      <Text variant="bodyMedium" style={styles.subtitle}>
+      <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
         ยินดีต้อนรับกลับมา กรอกข้อมูลเพื่อเข้าใช้งาน
       </Text>
 
@@ -89,7 +90,7 @@ export default function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   container: { flex: 1, justifyContent: 'center', padding: 24 },
-  subtitle: { marginBottom: 24, color: '#6b7280' },
+  subtitle: { marginBottom: 24 },
   field: { marginBottom: 8 },
   submitButton: { marginTop: 8, marginBottom: 8, paddingVertical: 4 },
 });

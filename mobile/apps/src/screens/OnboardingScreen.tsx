@@ -1,168 +1,96 @@
-import { useRef, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Animated,
-  Dimensions,
-  ScrollView,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
-} from 'react-native';
-import { Text, Button } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useCallback, useEffect, useRef } from 'react';
+import { StyleSheet, View, Animated, Easing, useWindowDimensions } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { markOnboardingSeen } from '../lib/onboarding';
+import { onboardingPalette as palette } from '../onboarding/palette';
+import SplashScene from '../onboarding/scenes/SplashScene';
+import RelaxScene from '../onboarding/scenes/RelaxScene';
+import CareScene from '../onboarding/scenes/CareScene';
+import MoodDiaryScene from '../onboarding/scenes/MoodDiaryScene';
+import WelcomeScene from '../onboarding/scenes/WelcomeScene';
+import TopBackSkipView from '../onboarding/scenes/TopBackSkipView';
+import CenterNextButton from '../onboarding/scenes/CenterNextButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
-const { width } = Dimensions.get('window');
-
-const SLIDES: {
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  title: string;
-  description: string;
-}[] = [
-  {
-    icon: 'calendar-check-outline',
-    title: 'จองสนามกีฬาได้ทุกที่',
-    description: 'เช็คตารางว่างและจองสนามกีฬาในมหาวิทยาลัยได้ในไม่กี่ขั้นตอน ไม่ต้องเดินไปถามเจ้าหน้าที่',
-  },
-  {
-    icon: 'bell-ring-outline',
-    title: 'ไม่พลาดทุกการแจ้งเตือน',
-    description: 'รับแจ้งเตือนทันทีเมื่อการจองได้รับการอนุมัติ หรือมีการเปลี่ยนแปลงตารางเวลา',
-  },
-  {
-    icon: 'shield-account-outline',
-    title: 'ปลอดภัยด้วยระบบสมาชิก',
-    description: 'ข้อมูลของคุณปลอดภัยด้วยระบบยืนยันตัวตน เข้าใช้งานได้เฉพาะนักศึกษาและบุคลากรเท่านั้น',
-  },
-];
-
+// Onboarding แบบ "scrub เดียวขับเคลื่อนทุกอย่าง" — animationController วิ่งจาก 0 ถึง 0.8 เป็น 5 ช่วง (ละ 0.2)
+// แต่ละ scene อ่านค่าตัวเดียวกันนี้ไป interpolate เอาเองว่าตัวเองควรอยู่ตรงไหน/โชว์ตอนไหน
+// พอร์ตมาจาก https://github.com/Aashu-Dubey/React-Native-UI-Templates/tree/main/src/introduction_animation แบบเกือบเป๊ะ
+// (ภาพประกอบ/สี/ข้อความเป็นของต้นฉบับจริง — ดูเหตุผลที่ไม่ใช้ธีมของแอปใน src/onboarding/palette.ts)
 export default function OnboardingScreen({ navigation }: Props) {
-  const scrollRef = useRef<ScrollView>(null);
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const [pageIndex, setPageIndex] = useState(0);
+  const window = useWindowDimensions();
+  const animationController = useRef(new Animated.Value(0));
+  const currentValue = useRef(0);
+
+  useEffect(() => {
+    const id = animationController.current.addListener(({ value }) => {
+      currentValue.current = value;
+    });
+    return () => animationController.current.removeListener(id);
+  }, []);
+
+  const scenesTranslateY = animationController.current.interpolate({
+    inputRange: [0, 0.2, 0.4, 0.6, 0.8],
+    outputRange: [window.height, 0, 0, 0, 0],
+  });
+
+  const playAnimation = useCallback((toValue: number, duration = 1600) => {
+    Animated.timing(animationController.current, {
+      toValue,
+      duration,
+      easing: Easing.bezier(0.4, 0.0, 0.2, 1.0),
+      useNativeDriver: false, // ปิดเพราะ NextButtonArrow animate ค่า width/borderRadius ซึ่ง native driver ไม่รองรับ
+    }).start();
+  }, []);
 
   async function finishOnboarding() {
     await markOnboardingSeen();
     navigation.replace('Home');
   }
 
-  function goToNextSlide() {
-    if (pageIndex === SLIDES.length - 1) {
-      finishOnboarding();
-      return;
-    }
-    scrollRef.current?.scrollTo({ x: width * (pageIndex + 1), animated: true });
-  }
+  const onNextClick = useCallback(() => {
+    const value = currentValue.current;
+    if (value === 0) playAnimation(0.2);
+    else if (value <= 0.2) playAnimation(0.4);
+    else if (value <= 0.4) playAnimation(0.6);
+    else if (value <= 0.6) playAnimation(0.8);
+    else finishOnboarding();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playAnimation]);
 
-  function handleScrollEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
-    const index = Math.round(event.nativeEvent.contentOffset.x / width);
-    setPageIndex(index);
-  }
+  const onBackClick = useCallback(() => {
+    const value = currentValue.current;
+    if (value >= 0.2 && value < 0.4) playAnimation(0);
+    else if (value >= 0.4 && value < 0.6) playAnimation(0.2);
+    else if (value >= 0.6 && value < 0.8) playAnimation(0.4);
+    else if (value >= 0.8) playAnimation(0.6);
+  }, [playAnimation]);
 
-  const isLastSlide = pageIndex === SLIDES.length - 1;
+  const onSkipClick = useCallback(() => playAnimation(0.8, 1200), [playAnimation]);
 
   return (
-    <View style={styles.container}>
-      <Button mode="text" onPress={finishOnboarding} style={styles.skipButton}>
-        ข้าม
-      </Button>
+    <View style={[styles.container, { backgroundColor: palette.background }]}>
+      <StatusBar style="dark" />
 
-      <Animated.ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-          useNativeDriver: false,
-        })}
-        onMomentumScrollEnd={handleScrollEnd}
-        scrollEventThrottle={16}
-      >
-        {SLIDES.map((slide, index) => (
-          <View key={slide.title} style={styles.slide}>
-            <View style={styles.iconCircle}>
-              <MaterialCommunityIcons name={slide.icon} size={72} color="#4F46E5" />
-            </View>
-            <Text variant="headlineSmall" style={styles.title}>
-              {slide.title}
-            </Text>
-            <Text variant="bodyMedium" style={styles.description}>
-              {slide.description}
-            </Text>
-          </View>
-        ))}
-      </Animated.ScrollView>
+      <SplashScene onNextClick={onNextClick} animationController={animationController} />
 
-      <View style={styles.dotsRow}>
-        {SLIDES.map((_, index) => {
-          const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
-          const dotWidth = scrollX.interpolate({
-            inputRange,
-            outputRange: [8, 24, 8],
-            extrapolate: 'clamp',
-          });
-          const dotOpacity = scrollX.interpolate({
-            inputRange,
-            outputRange: [0.3, 1, 0.3],
-            extrapolate: 'clamp',
-          });
-          return <Animated.View key={index} style={[styles.dot, { width: dotWidth, opacity: dotOpacity }]} />;
-        })}
-      </View>
+      <Animated.View style={[styles.scenesContainer, { transform: [{ translateY: scenesTranslateY }] }]}>
+        <RelaxScene animationController={animationController} />
+        <CareScene animationController={animationController} />
+        <MoodDiaryScene animationController={animationController} />
+        <WelcomeScene animationController={animationController} />
+      </Animated.View>
 
-      <Button mode="contained" onPress={goToNextSlide} style={styles.nextButton}>
-        {isLastSlide ? 'เริ่มใช้งาน' : 'ถัดไป'}
-      </Button>
+      <TopBackSkipView onBackClick={onBackClick} onSkipClick={onSkipClick} animationController={animationController} />
+
+      <CenterNextButton onNextClick={onNextClick} animationController={animationController} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAFAFA' },
-  skipButton: { alignSelf: 'flex-end', marginTop: 8, marginRight: 8 },
-  slide: {
-    width,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  iconCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: '#E0E7FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 32,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 12,
-    color: '#1C1B1F',
-  },
-  description: {
-    textAlign: 'center',
-    color: '#6b7280',
-    lineHeight: 22,
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 24,
-  },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#4F46E5',
-  },
-  nextButton: {
-    marginHorizontal: 32,
-    marginBottom: 32,
-    paddingVertical: 4,
-  },
+  container: { flex: 1 },
+  scenesContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center' },
 });
