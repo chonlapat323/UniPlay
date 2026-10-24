@@ -1,3 +1,11 @@
+// =============================================================================
+// WelcomeScene.tsx — ฉากสุดท้าย "Welcome"
+// -----------------------------------------------------------------------------
+// ไทม์ไลน์ของฉากนี้:
+//   0 -> 0.6   : รอคิวนอกจอขวา (ไม่ขยับ)
+//   0.6 -> 0.8 : เลื่อนเข้ามาจากขวา
+//   0.8        : อยู่กลางจอแล้วจบ — ไม่มีช่วง "ออก" เพราะไม่มีฉากถัดไป
+// =============================================================================
 import { StyleSheet, Text, Image, Animated, useWindowDimensions } from 'react-native';
 import { palette } from '../palette';
 
@@ -7,20 +15,26 @@ interface Props {
 
 const welcomeImage = require('../../assets/onboarding/welcome.png');
 const IMAGE_WIDTH = 350;
-const IMAGE_HEIGHT = 350;
+const IMAGE_HEIGHT = 350; // รูปฉากนี้เกือบจัตุรัส จึงสูงกว่าฉากอื่น
 
-// สไลด์สุดท้าย (progress 0.6 -> 0.8) — เข้าจากขวาแล้วหยุดอยู่กับที่
 export default function WelcomeScene({ animationController }: Props) {
   const window = useWindowDimensions();
 
+  //   ตัวเลข: 0        0.6      0.8
+  //   ค่า:    +width   +width   0
+  //           (รอขวา)   (ยังรอ)  (กลางจอ)
   const containerTranslateX = animationController.current.interpolate({
     inputRange: [0, 0.6, 0.8],
     outputRange: [window.width, window.width, 0],
   });
+
+  // หัวข้อเหลื่อมตามมา 52 px (= fontSize 26 x 2) เหมือนฉาก Care
   const titleTranslateX = animationController.current.interpolate({
     inputRange: [0, 0.6, 0.8],
     outputRange: [26 * 2, 26 * 2, 0],
   });
+
+  // รูปเริ่มไกล 1400 px (350 * 4) -> วิ่งเข้ามาเร็วกว่าตัวฉาก = parallax
   const imageTranslateX = animationController.current.interpolate({
     inputRange: [0, 0.6, 0.8],
     outputRange: [IMAGE_WIDTH * 4, IMAGE_WIDTH * 4, 0],
