@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ฝึก Tailwind</title>
+
+  <!-- 1) โหลด Tailwind CSS v4 ผ่าน CDN (บรรทัดเดียวจบ ไม่ต้องติดตั้งอะไร) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <!-- 2) ฟอนต์ภาษาไทย (ไม่บังคับ แต่ทำให้ภาษาไทยสวยขึ้น) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- 3) ตั้งค่าเพิ่มเติมของ Tailwind (บทที่ 14 และ 15 อธิบาย) -->
+  <style type="text/tailwindcss">
+    @theme {
+      /* ใช้ฟอนต์ Noto Sans Thai เป็นฟอนต์หลัก (class font-sans) */
+      --font-sans: "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
+      /* สีแบรนด์ของเราเอง -> ใช้ได้ทันที: bg-brand-500, text-brand-700, border-brand-100 ... */
+      --color-brand-50: #eef2ff;
+      --color-brand-100: #e0e7ff;
+      --color-brand-500: #6366f1;
+      --color-brand-600: #4f46e5;
+      --color-brand-700: #4338ca;
+    }
+    /* ให้ dark: ทำงานเมื่อมี class="dark" ครอบอยู่ (กดปุ่มสลับได้) แทนการดูจากตั้งค่าเครื่อง */
+    @custom-variant dark (&:where(.dark, .dark *));
+  </style>
+</head>
+
+<body class="bg-slate-100 font-sans text-slate-800 antialiased">
+  <!-- =====================================================================
+       ไฟล์ฝึกหัด: ส่วน <head> ด้านบนตั้งค่าไว้เหมือน index.html ทุกอย่างแล้ว ห้ามลบ
+       วิธีใช้: คัดลอกโค้ดจากบทเรียน มาวางแทนที่บรรทัด "วางโค้ดตรงนี้" -> บันทึก (Ctrl+S) -> รีเฟรชเบราว์เซอร์ (F5)
+       ===================================================================== -->
+  <main class="mx-auto max-w-4xl p-6">
+
+    <!-- วางโค้ดตรงนี้ -->
+    <h1 class="text-3xl font-bold text-indigo-600">พร้อมเรียน Tailwind แล้ว 🎉</h1>
+    <p class="mt-2 text-slate-600">ถ้าเห็นตัวหนังสือสีม่วงตัวใหญ่ แปลว่า Tailwind ทำงานแล้ว</p>
+
+  </main>
+</body>
+</html>

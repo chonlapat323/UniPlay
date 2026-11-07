@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tailwind CSS — บทเรียนตัวอย่าง</title>
+
+  <!-- 1) โหลด Tailwind CSS v4 ผ่าน CDN (บรรทัดเดียวจบ ไม่ต้องติดตั้งอะไร) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <!-- 2) ฟอนต์ภาษาไทย (ไม่บังคับ แต่ทำให้ภาษาไทยสวยขึ้น) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- 3) ตั้งค่าเพิ่มเติมของ Tailwind (บทที่ 14 และ 15 อธิบาย) -->
+  <style type="text/tailwindcss">
+    @theme {
+      /* ใช้ฟอนต์ Noto Sans Thai เป็นฟอนต์หลัก (class font-sans) */
+      --font-sans: "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
+      /* สีแบรนด์ของเราเอง -> ใช้ได้ทันที: bg-brand-500, text-brand-700, border-brand-100 ... */
+      --color-brand-50: #eef2ff;
+      --color-brand-100: #e0e7ff;
+      --color-brand-500: #6366f1;
+      --color-brand-600: #4f46e5;
+      --color-brand-700: #4338ca;
+    }
+    /* ให้ dark: ทำงานเมื่อมี class="dark" ครอบอยู่ (กดปุ่มสลับได้) แทนการดูจากตั้งค่าเครื่อง */
+    @custom-variant dark (&:where(.dark, .dark *));
+  </style>
+</head>
+
+<body class="bg-slate-100 font-sans text-slate-800 antialiased">
+
+  <!-- ===================== ส่วนหัวของหน้าบทเรียน ===================== -->
+  <header class="bg-linear-to-br from-indigo-600 to-violet-600 text-white">
+    <div class="mx-auto max-w-6xl px-4 py-12 md:py-16">
+      <p class="text-sm font-medium text-indigo-200">UniPlay · บทเรียน UI</p>
+      <h1 class="mt-2 text-3xl font-bold md:text-5xl">Tailwind CSS ตั้งแต่ศูนย์</h1>
+      <p class="mt-4 max-w-2xl text-indigo-100 md:text-lg">
+        17 บท (0–16) ไล่จากสีและตัวอักษร ไปจนถึงหน้าเว็บจองสนามที่ใช้ได้จริง ทุกบทมี
+        <b class="text-white">ผลลัพธ์จริง</b> คู่กับ <b class="text-white">โค้ด</b> กดคัดลอกไปลองได้เลย
+      </p>
+    </div>
+  </header>
+
+  <!-- ===================== สารบัญ (ติดด้านบนตอนเลื่อน) ===================== -->
+  <nav class="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+    <div class="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 py-3 text-sm whitespace-nowrap">
+      <a href="#l0" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">0 แนวคิด</a>
+      <a href="#l1" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">1 สี</a>
+      <a href="#l2" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">2 ตัวอักษร</a>
+      <a href="#l3" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">3 ระยะห่าง</a>
+      <a href="#l4" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">4 ขนาด</a>
+      <a href="#l5" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">5 ขอบ มุม เงา</a>
+      <a href="#l6" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">6 Flexbox</a>
+      <a href="#l7" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">7 Grid</a>
+      <a href="#l8" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">8 ตำแหน่ง/ซ้อนชั้น</a>
+      <a href="#l9" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">9 รูปภาพ</a>
+      <a href="#l10" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">10 ฟอร์ม</a>
+      <a href="#l11" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">11 Responsive</a>
+      <a href="#l12" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">12 Hover/สถานะ</a>
+      <a href="#l13" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">13 Animation</a>
+      <a href="#l14" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">14 Dark mode</a>
+      <a href="#l15" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-indigo-100 hover:text-indigo-700">15 ปรับแต่งเอง</a>
+      <a href="#l16" class="rounded-full bg-indigo-600 px-3 py-1 text-white hover:bg-indigo-700">16 โปรเจคจริง</a>
+    </div>
+  </nav>
+
+  <main class="mx-auto max-w-6xl space-y-10 px-4 py-10">
+
+    <!-- =====================================================================
+         วิธีทำงานของหน้านี้:
+         ทุกกล่องที่มี data-demo จะถูกสคริปต์ท้ายไฟล์ดึง HTML ข้างในไปแสดงเป็น "โค้ด" ให้อัตโนมัติ
+         => โค้ดที่เห็นบนหน้าเว็บ ตรงกับผลลัพธ์ที่แสดงทุกตัวอักษร
+         ===================================================================== -->
+
+    <!-- ============================ บทที่ 0 ============================ -->
+    <section id="l0" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 0</p>
+      <h2 class="mt-1 text-2xl font-bold">Tailwind คืออะไร — "ตกแต่งด้วย class"</h2>
+      <p class="mt-3 text-slate-600">
+        ปกติเราเขียน CSS แยกไฟล์แล้วตั้งชื่อ class เอง แต่ Tailwind มี class สำเร็จรูปให้หลายพันตัว
+        <b>1 class = 1 การตกแต่ง</b> เอามาต่อกันใน <code class="rounded bg-slate-100 px-1">class="..."</code> ได้เลย
+      </p>
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl bg-slate-50 p-4">
+          <p class="mb-2 text-sm font-semibold text-slate-500">CSS แบบเดิม (2 ที่)</p>
+          <pre class="overflow-x-auto text-xs leading-relaxed text-slate-700">&lt;button class="my-btn"&gt;จอง&lt;/button&gt;
+
+.my-btn {
+  background: #4f46e5;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+}</pre>
+        </div>
+        <div class="rounded-xl bg-indigo-50 p-4">
+          <p class="mb-2 text-sm font-semibold text-indigo-600">Tailwind (ที่เดียวจบ)</p>
+          <pre class="overflow-x-auto text-xs leading-relaxed text-slate-700">&lt;button class="bg-indigo-600 text-white
+               px-4 py-2 rounded-lg"&gt;
+  จอง
+&lt;/button&gt;</pre>
+        </div>
+      </div>
+      <div class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
+        <p class="font-semibold">วิธีเริ่มใช้ (ไม่ต้องติดตั้งอะไร)</p>
+        <ol class="mt-2 list-decimal space-y-1 pl-5">
+          <li>เปิดไฟล์ <code class="rounded bg-white px-1">practice.html</code> ในโฟลเดอร์เดียวกันนี้ด้วย VS Code (ตั้งค่าส่วน &lt;head&gt; ไว้ให้แล้ว)</li>
+          <li>หัวใจคือบรรทัดนี้ใน &lt;head&gt;: <code class="rounded bg-white px-1">&lt;script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"&gt;&lt;/script&gt;</code></li>
+          <li>คัดลอกโค้ดจากบทไหนก็ได้ ไปวางใน &lt;body&gt; → บันทึก → ดับเบิลคลิกไฟล์เปิดในเบราว์เซอร์ (ต้องต่ออินเทอร์เน็ต)</li>
+        </ol>
+      </div>
+      <p class="mt-4 text-sm text-slate-500">ผลลัพธ์ของทั้งสองแบบเหมือนกัน 👇</p>
+      <div data-demo="l0" class="mt-2">
+        <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg">จอง</button>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 1 ============================ -->
+    <section id="l1" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 1</p>
+      <h2 class="mt-1 text-2xl font-bold">สี — <code>bg-</code> พื้นหลัง, <code>text-</code> ตัวอักษร</h2>
+      <p class="mt-3 text-slate-600">
+        สูตร: <b>สิ่งที่จะใส่สี - ชื่อสี - ความเข้ม</b> เช่น <code class="rounded bg-slate-100 px-1">bg-sky-500</code>
+        ความเข้มมีตั้งแต่ <b>50</b> (อ่อนสุด) ถึง <b>950</b> (เข้มสุด) · ใส่ <code class="rounded bg-slate-100 px-1">/50</code> ต่อท้าย = ความทึบ 50%
+      </p>
+      <div data-demo="l1" class="mt-5 space-y-4">
+        <!-- ไล่ความเข้มของสี sky -->
+        <div class="flex flex-wrap gap-2">
+          <div class="bg-sky-100 px-3 py-2 rounded">100</div>
+          <div class="bg-sky-300 px-3 py-2 rounded">300</div>
+          <div class="bg-sky-500 text-white px-3 py-2 rounded">500</div>
+          <div class="bg-sky-700 text-white px-3 py-2 rounded">700</div>
+          <div class="bg-sky-900 text-white px-3 py-2 rounded">900</div>
+        </div>
+        <!-- ชื่อสียอดนิยม -->
+        <div class="flex flex-wrap gap-2">
+          <span class="bg-red-500 text-white px-3 py-1 rounded">red</span>
+          <span class="bg-orange-500 text-white px-3 py-1 rounded">orange</span>
+          <span class="bg-amber-400 px-3 py-1 rounded">amber</span>
+          <span class="bg-green-500 text-white px-3 py-1 rounded">green</span>
+          <span class="bg-teal-500 text-white px-3 py-1 rounded">teal</span>
+          <span class="bg-blue-500 text-white px-3 py-1 rounded">blue</span>
+          <span class="bg-indigo-500 text-white px-3 py-1 rounded">indigo</span>
+          <span class="bg-pink-500 text-white px-3 py-1 rounded">pink</span>
+          <span class="bg-slate-500 text-white px-3 py-1 rounded">slate</span>
+        </div>
+        <!-- สีตัวอักษร + ความทึบ -->
+        <p class="text-green-600">ว่าง — จองได้</p>
+        <p class="text-red-600">เต็มแล้ว</p>
+        <div class="bg-indigo-600/20 text-indigo-800 px-3 py-2 rounded">พื้นหลัง indigo ทึบแค่ 20%</div>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 2 ============================ -->
+    <section id="l2" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 2</p>
+      <h2 class="mt-1 text-2xl font-bold">ตัวอักษร — ขนาด ความหนา การจัดวาง</h2>
+      <p class="mt-3 text-slate-600">
+        ขนาด <code class="rounded bg-slate-100 px-1">text-xs sm base lg xl 2xl … 9xl</code> ·
+        ความหนา <code class="rounded bg-slate-100 px-1">font-normal medium semibold bold</code> ·
+        จัดวาง <code class="rounded bg-slate-100 px-1">text-left center right</code>
+      </p>
+      <div data-demo="l2" class="mt-5 space-y-2">
+        <p class="text-xs">text-xs ตัวเล็กมาก (12px)</p>
+        <p class="text-base">text-base ขนาดปกติ (16px)</p>
+        <p class="text-2xl">text-2xl ใหญ่ขึ้น (24px)</p>
+        <p class="text-4xl font-bold">text-4xl font-bold</p>
+        <p class="text-lg font-semibold text-center text-indigo-600">จัดกลาง ตัวหนาปานกลาง</p>
+        <p class="text-sm text-slate-500 leading-relaxed">
+          leading-relaxed = ระยะห่างระหว่างบรรทัดกว้างขึ้น อ่านสบายตา เหมาะกับย่อหน้ายาวๆ
+          ที่มีหลายบรรทัด ลองเปลี่ยนเป็น leading-tight แล้วเทียบดู
+        </p>
+        <p class="uppercase tracking-widest text-xs font-semibold text-slate-400">uppercase + tracking-widest</p>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 3 ============================ -->
+    <section id="l3" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 3</p>
+      <h2 class="mt-1 text-2xl font-bold">ระยะห่าง — padding (ข้างใน) และ margin (ข้างนอก)</h2>
+      <p class="mt-3 text-slate-600">
+        <b>ตัวเลข 1 หน่วย = 4px</b> → <code class="rounded bg-slate-100 px-1">p-4</code> = 16px ·
+        <code class="rounded bg-slate-100 px-1">p</code> ทุกด้าน, <code class="rounded bg-slate-100 px-1">px</code> ซ้าย-ขวา,
+        <code class="rounded bg-slate-100 px-1">py</code> บน-ล่าง, <code class="rounded bg-slate-100 px-1">pt pr pb pl</code> ทีละด้าน
+        (margin ใช้ <code class="rounded bg-slate-100 px-1">m</code> แทน <code class="rounded bg-slate-100 px-1">p</code> แบบเดียวกัน)
+      </p>
+      <div data-demo="l3" class="mt-5 space-y-4">
+        <!-- padding: ดันเนื้อหาออกจากขอบ "ข้างใน" กล่อง -->
+        <div class="flex flex-wrap items-start gap-3">
+          <div class="bg-amber-200 p-1">p-1</div>
+          <div class="bg-amber-200 p-4">p-4</div>
+          <div class="bg-amber-200 p-8">p-8</div>
+          <div class="bg-amber-200 px-8 py-2">px-8 py-2</div>
+        </div>
+        <!-- margin: ดันกล่อง "ออกจากเพื่อนข้างๆ" -->
+        <div class="bg-slate-100 p-2">
+          <div class="bg-teal-300 p-2">กล่อง A</div>
+          <div class="bg-teal-300 p-2 mt-6">กล่อง B (mt-6 ห่างจาก A 24px)</div>
+          <div class="bg-teal-300 p-2 mt-2 ml-12">กล่อง C (mt-2 ml-12)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 4 ============================ -->
+    <section id="l4" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 4</p>
+      <h2 class="mt-1 text-2xl font-bold">ขนาด — กว้าง <code>w-</code> สูง <code>h-</code></h2>
+      <p class="mt-3 text-slate-600">
+        ตัวเลขใช้หน่วยเดียวกับระยะห่าง (<code class="rounded bg-slate-100 px-1">w-16</code> = 64px) ·
+        เป็นสัดส่วนได้ <code class="rounded bg-slate-100 px-1">w-1/2 w-full</code> ·
+        จำกัดความกว้าง <code class="rounded bg-slate-100 px-1">max-w-sm md lg</code> ·
+        กว้าง=สูง <code class="rounded bg-slate-100 px-1">size-12</code>
+      </p>
+      <div data-demo="l4" class="mt-5 space-y-3">
+        <div class="w-16 h-8 bg-pink-300">w-16</div>
+        <div class="w-1/2 bg-pink-300">w-1/2 (ครึ่งหนึ่งของแม่)</div>
+        <div class="w-full bg-pink-300">w-full (เต็มความกว้างแม่)</div>
+        <div class="w-full max-w-sm bg-pink-400 text-white">w-full max-w-sm (เต็ม แต่ไม่เกิน 384px)</div>
+        <div class="flex gap-2">
+          <div class="size-8 bg-indigo-500"></div>
+          <div class="size-12 bg-indigo-500"></div>
+          <div class="size-16 bg-indigo-500"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 5 ============================ -->
+    <section id="l5" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 5</p>
+      <h2 class="mt-1 text-2xl font-bold">ขอบ มุมมน เงา — ทำให้กล่องดูเป็น "การ์ด"</h2>
+      <p class="mt-3 text-slate-600">
+        เส้นขอบ <code class="rounded bg-slate-100 px-1">border border-2 border-slate-300</code> ·
+        มุมมน <code class="rounded bg-slate-100 px-1">rounded rounded-lg rounded-2xl rounded-full</code> ·
+        เงา <code class="rounded bg-slate-100 px-1">shadow-sm shadow-md shadow-xl</code>
+      </p>
+      <div data-demo="l5" class="mt-5 space-y-6">
+        <div class="flex flex-wrap gap-4">
+          <div class="size-20 bg-sky-200 border border-sky-500"></div>
+          <div class="size-20 bg-sky-200 rounded-lg"></div>
+          <div class="size-20 bg-sky-200 rounded-3xl"></div>
+          <div class="size-20 bg-sky-200 rounded-full"></div>
+        </div>
+        <div class="flex flex-wrap gap-6 bg-slate-50 p-6">
+          <div class="w-28 rounded-xl bg-white p-4 shadow-sm">shadow-sm</div>
+          <div class="w-28 rounded-xl bg-white p-4 shadow-md">shadow-md</div>
+          <div class="w-28 rounded-xl bg-white p-4 shadow-xl">shadow-xl</div>
+        </div>
+        <!-- รวมทุกอย่าง = การ์ด 1 ใบ -->
+        <div class="max-w-xs rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
+          <p class="text-lg font-bold">สนามฟุตบอล 1</p>
+          <p class="text-sm text-slate-500">หญ้าเทียม · 11 คน</p>
+          <span class="mt-3 inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">ว่าง</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 6 ============================ -->
+    <section id="l6" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 6</p>
+      <h2 class="mt-1 text-2xl font-bold">Flexbox — จัดของเรียงแถว จัดกลาง ชิดซ้ายขวา</h2>
+      <p class="mt-3 text-slate-600">
+        ใส่ <code class="rounded bg-slate-100 px-1">flex</code> ที่กล่องแม่ → ลูกเรียงแนวนอน ·
+        <code class="rounded bg-slate-100 px-1">flex-col</code> เรียงแนวตั้ง ·
+        <code class="rounded bg-slate-100 px-1">justify-</code> จัดตามแนวที่เรียง ·
+        <code class="rounded bg-slate-100 px-1">items-</code> จัดแนวตั้งฉาก ·
+        <code class="rounded bg-slate-100 px-1">gap-</code> ช่องว่างระหว่างลูก
+      </p>
+      <div data-demo="l6" class="mt-5 space-y-3 text-sm">
+        <div class="flex gap-2 bg-slate-100 p-2">
+          <div class="bg-violet-400 p-3 text-white">A</div><div class="bg-violet-400 p-3 text-white">B</div><div class="bg-violet-400 p-3 text-white">C</div>
+          <span class="self-center text-slate-500">flex gap-2</span>
+        </div>
+        <div class="flex justify-center gap-2 bg-slate-100 p-2">
+          <div class="bg-violet-400 p-3 text-white">A</div><div class="bg-violet-400 p-3 text-white">B</div>
+          <span class="self-center text-slate-500">justify-center</span>
+        </div>
+        <div class="flex justify-between bg-slate-100 p-2">
+          <div class="bg-violet-400 p-3 text-white">โลโก้</div>
+          <span class="self-center text-slate-500">justify-between</span>
+          <div class="bg-violet-400 p-3 text-white">เมนู</div>
+        </div>
+        <div class="flex h-28 items-center justify-center bg-slate-100">
+          <div class="bg-violet-500 p-3 text-white">อยู่กลางกล่องพอดี (items-center justify-center)</div>
+        </div>
+        <div class="flex flex-col gap-2 bg-slate-100 p-2">
+          <div class="bg-violet-400 p-2 text-white">flex-col: 1</div>
+          <div class="bg-violet-400 p-2 text-white">flex-col: 2</div>
+        </div>
+        <!-- ใช้จริง: แถวหัวเว็บ -->
+        <div class="flex items-center justify-between rounded-xl bg-indigo-600 px-4 py-3 text-white">
+          <span class="font-bold">⚽ UniPlay</span>
+          <div class="flex gap-4"><a href="#l6">สนาม</a><a href="#l6">การจอง</a><a href="#l6">ออกจากระบบ</a></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 7 ============================ -->
+    <section id="l7" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 7</p>
+      <h2 class="mt-1 text-2xl font-bold">Grid — แบ่งเป็นตาราง/คอลัมน์</h2>
+      <p class="mt-3 text-slate-600">
+        <code class="rounded bg-slate-100 px-1">grid grid-cols-3</code> = แบ่ง 3 คอลัมน์เท่ากัน ลูกจะเรียงลงช่องเองอัตโนมัติ ·
+        <code class="rounded bg-slate-100 px-1">col-span-2</code> = ลูกตัวนี้กว้าง 2 ช่อง ·
+        เหมาะกับ "การ์ดหลายใบ" มากกว่า flex
+      </p>
+      <div data-demo="l7" class="mt-5 space-y-4 text-sm">
+        <div class="grid grid-cols-3 gap-3">
+          <div class="rounded bg-emerald-300 p-4">1</div>
+          <div class="rounded bg-emerald-300 p-4">2</div>
+          <div class="rounded bg-emerald-300 p-4">3</div>
+          <div class="rounded bg-emerald-300 p-4">4</div>
+          <div class="rounded bg-emerald-300 p-4">5</div>
+        </div>
+        <div class="grid grid-cols-4 gap-3">
+          <div class="col-span-3 rounded bg-emerald-500 p-4 text-white">col-span-3 (เนื้อหาหลัก)</div>
+          <div class="rounded bg-emerald-300 p-4">เมนูข้าง</div>
+          <div class="col-span-4 rounded bg-emerald-200 p-4">col-span-4 (เต็มแถว)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 8 ============================ -->
+    <section id="l8" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 8</p>
+      <h2 class="mt-1 text-2xl font-bold">ตำแหน่งและการซ้อนชั้น — ป้ายมุมการ์ด, แถบติดหัว, ซ่อน/แสดง</h2>
+      <p class="mt-3 text-slate-600">
+        <code class="rounded bg-slate-100 px-1">relative</code> ที่แม่ + <code class="rounded bg-slate-100 px-1">absolute top-2 right-2</code> ที่ลูก = ลูกลอยไปมุมของแม่ ·
+        <code class="rounded bg-slate-100 px-1">sticky top-0</code> ติดด้านบนตอนเลื่อน ·
+        <code class="rounded bg-slate-100 px-1">fixed</code> ติดหน้าจอตลอด ·
+        <code class="rounded bg-slate-100 px-1">z-10</code> ตัวเลขมากอยู่ชั้นบน ·
+        <code class="rounded bg-slate-100 px-1">hidden</code> ซ่อน, <code class="rounded bg-slate-100 px-1">block / inline-block</code> แสดง
+      </p>
+      <div data-demo="l8" class="mt-5 space-y-6 text-sm">
+        <!-- ป้ายมุมการ์ด: แม่ relative, ลูก absolute -->
+        <div class="relative max-w-xs rounded-2xl bg-slate-100 p-6">
+          <span class="absolute top-3 right-3 rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">HOT</span>
+          <p class="font-bold">สนามฟุตซอล</p>
+          <p class="text-slate-500">ป้าย HOT ลอยอยู่มุมขวาบนของการ์ด</p>
+        </div>
+        <!-- ซ้อนชั้น: z ยิ่งมากยิ่งอยู่บน -->
+        <div class="relative h-28">
+          <div class="absolute top-0 left-0 z-10 size-20 rounded-lg bg-sky-400 p-2 text-white">z-10</div>
+          <div class="absolute top-6 left-10 z-30 size-20 rounded-lg bg-pink-500 p-2 text-white">z-30</div>
+          <div class="absolute top-12 left-20 z-20 size-20 rounded-lg bg-amber-400 p-2">z-20</div>
+        </div>
+        <!-- sticky: เลื่อนกล่องนี้ดู หัวข้อจะติดด้านบน -->
+        <div class="h-40 max-w-xs overflow-y-auto rounded-lg border border-slate-200">
+          <div class="sticky top-0 bg-indigo-600 px-3 py-2 text-white">หัวข้อ sticky (เลื่อนดูสิ)</div>
+          <p class="p-3">รายการที่ 1</p><p class="p-3">รายการที่ 2</p><p class="p-3">รายการที่ 3</p>
+          <p class="p-3">รายการที่ 4</p><p class="p-3">รายการที่ 5</p><p class="p-3">รายการที่ 6</p>
+        </div>
+        <!-- hidden / inline-block -->
+        <p>ข้อความนี้ <span class="hidden">ถูกซ่อน (hidden)</span><span class="inline-block rounded bg-green-100 px-2 text-green-700">แสดงเป็น inline-block</span></p>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 9 ============================ -->
+    <section id="l9" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 9</p>
+      <h2 class="mt-1 text-2xl font-bold">รูปภาพและพื้นหลัง — รูปไม่บิด, ไล่สี, ตัดข้อความยาว</h2>
+      <p class="mt-3 text-slate-600">
+        <code class="rounded bg-slate-100 px-1">object-cover</code> รูปเต็มกรอบแต่ไม่บิด (ตัดส่วนเกิน) ·
+        <code class="rounded bg-slate-100 px-1">aspect-video / aspect-square</code> ล็อกสัดส่วนกรอบ ·
+        <code class="rounded bg-slate-100 px-1">bg-linear-to-r from-… to-…</code> ไล่สี ·
+        <code class="rounded bg-slate-100 px-1">overflow-hidden</code> ตัดส่วนที่ล้นมุมมน ·
+        <code class="rounded bg-slate-100 px-1">truncate</code> ข้อความยาวเกินให้เป็น …
+      </p>
+      <div data-demo="l9" class="mt-5 space-y-6 text-sm">
+        <!-- เทียบรูปบิด vs object-cover (รูปจาก picsum.photos ต้องต่อเน็ต) -->
+        <div class="flex flex-wrap gap-4">
+          <div>
+            <img src="https://picsum.photos/seed/uniplay/600/400" alt="ตัวอย่างรูป" class="h-32 w-32 rounded-lg" />
+            <p class="mt-1 text-red-600">ไม่มี object-cover = บิด</p>
+          </div>
+          <div>
+            <img src="https://picsum.photos/seed/uniplay/600/400" alt="ตัวอย่างรูป" class="h-32 w-32 rounded-lg object-cover" />
+            <p class="mt-1 text-green-600">object-cover = ไม่บิด</p>
+          </div>
+          <div>
+            <img src="https://picsum.photos/seed/uniplay/600/400" alt="ตัวอย่างรูป" class="size-32 rounded-full object-cover" />
+            <p class="mt-1">รูปโปรไฟล์วงกลม</p>
+          </div>
+        </div>
+        <!-- การ์ดรูป: overflow-hidden ตัดมุมรูปให้มนตามการ์ด -->
+        <div class="max-w-xs overflow-hidden rounded-2xl bg-white shadow-md">
+          <img src="https://picsum.photos/seed/stadium/800/450" alt="สนาม" class="aspect-video w-full object-cover" />
+          <p class="truncate p-4 font-semibold">สนามฟุตบอลหญ้าเทียมมาตรฐาน FIFA อาคารกีฬากลางมหาวิทยาลัย</p>
+        </div>
+        <!-- ไล่สี -->
+        <div class="flex flex-wrap gap-3">
+          <div class="h-16 w-40 rounded-lg bg-linear-to-r from-pink-500 to-orange-400"></div>
+          <div class="h-16 w-40 rounded-lg bg-linear-to-br from-indigo-600 to-violet-500"></div>
+          <div class="h-16 w-40 rounded-lg bg-linear-to-b from-sky-300 via-white to-green-300"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 10 ============================ -->
+    <section id="l10" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 10</p>
+      <h2 class="mt-1 text-2xl font-bold">ฟอร์ม — ช่องกรอก เลือก ติ๊ก ปุ่มส่ง</h2>
+      <p class="mt-3 text-slate-600">
+        Tailwind ล้างหน้าตาเดิมของช่องกรอกออกหมด เราต้องใส่เอง: <code class="rounded bg-slate-100 px-1">border rounded-lg px-3 py-2</code> ·
+        <code class="rounded bg-slate-100 px-1">focus:ring-4</code> วงแสงตอนคลิก ·
+        <code class="rounded bg-slate-100 px-1">accent-indigo-600</code> สีของ checkbox/radio ·
+        จัดฟอร์ม 2 คอลัมน์ด้วย <code class="rounded bg-slate-100 px-1">grid md:grid-cols-2</code>
+      </p>
+      <div data-demo="l10" class="mt-5">
+        <form class="max-w-xl space-y-4 rounded-2xl border border-slate-200 p-6" onsubmit="event.preventDefault()">
+          <h3 class="text-lg font-bold">จองสนาม</h3>
+          <div class="grid gap-4 md:grid-cols-2">
+            <label class="block">
+              <span class="text-sm font-medium text-slate-700">ชื่อผู้จอง</span>
+              <input type="text" placeholder="สมชาย ใจดี" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100" />
+            </label>
+            <label class="block">
+              <span class="text-sm font-medium text-slate-700">อีเมล</span>
+              <input type="email" value="ผิดรูปแบบ" class="mt-1 w-full rounded-lg border border-red-500 px-3 py-2 outline-none focus:ring-4 focus:ring-red-100" />
+              <span class="mt-1 block text-xs text-red-600">กรุณากรอกอีเมลให้ถูกต้อง</span>
+            </label>
+            <label class="block">
+              <span class="text-sm font-medium text-slate-700">สนาม</span>
+              <select class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100">
+                <option>ฟุตบอล 1</option>
+                <option>บาสเกตบอล</option>
+                <option>แบดมินตัน 2</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-sm font-medium text-slate-700">วันที่</span>
+              <input type="date" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100" />
+            </label>
+          </div>
+          <label class="block">
+            <span class="text-sm font-medium text-slate-700">หมายเหตุ</span>
+            <textarea rows="3" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"></textarea>
+          </label>
+          <div class="flex flex-wrap gap-6 text-sm">
+            <label class="flex items-center gap-2"><input type="radio" name="time" class="size-4 accent-indigo-600" checked /> เช้า</label>
+            <label class="flex items-center gap-2"><input type="radio" name="time" class="size-4 accent-indigo-600" /> บ่าย</label>
+            <label class="flex items-center gap-2"><input type="checkbox" class="size-4 accent-indigo-600" /> ขอยืมลูกบอล</label>
+          </div>
+          <button type="submit" class="w-full rounded-lg bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700 active:scale-[0.98]">ยืนยันการจอง</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 11 ============================ -->
+    <section id="l11" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 11</p>
+      <h2 class="mt-1 text-2xl font-bold">Responsive — หน้าเดียว สวยทั้งมือถือและคอม</h2>
+      <p class="mt-3 text-slate-600">
+        เติมคำนำหน้า <b>"ตั้งแต่จอขนาดนี้ขึ้นไป"</b>:
+        <code class="rounded bg-slate-100 px-1">sm:</code> ≥640px ·
+        <code class="rounded bg-slate-100 px-1">md:</code> ≥768px ·
+        <code class="rounded bg-slate-100 px-1">lg:</code> ≥1024px
+        — class ที่ไม่มีคำนำหน้าคือค่าของ <b>มือถือ</b> (เขียนมือถือก่อน แล้วค่อยเพิ่มของจอใหญ่ = Mobile First)
+      </p>
+      <p class="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+        👉 ลองย่อ-ขยายหน้าต่างเบราว์เซอร์ (หรือกด F12 แล้วกดไอคอนมือถือ) แล้วดูกล่องข้างล่างเปลี่ยน
+      </p>
+      <div data-demo="l11" class="mt-5 space-y-4 text-sm">
+        <!-- มือถือ 1 คอลัมน์ → แท็บเล็ต 2 → คอม 4 -->
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="rounded bg-sky-300 p-4">การ์ด 1</div>
+          <div class="rounded bg-sky-300 p-4">การ์ด 2</div>
+          <div class="rounded bg-sky-300 p-4">การ์ด 3</div>
+          <div class="rounded bg-sky-300 p-4">การ์ด 4</div>
+        </div>
+        <!-- ตัวบอกขนาดจอปัจจุบัน -->
+        <div class="rounded-lg p-3 text-center font-semibold text-white bg-red-500 sm:bg-orange-500 md:bg-green-600 lg:bg-indigo-600">
+          <span class="sm:hidden">ตอนนี้: มือถือ (&lt; 640px)</span>
+          <span class="hidden sm:inline md:hidden">ตอนนี้: sm (≥ 640px)</span>
+          <span class="hidden md:inline lg:hidden">ตอนนี้: md (≥ 768px)</span>
+          <span class="hidden lg:inline">ตอนนี้: lg (≥ 1024px)</span>
+        </div>
+        <!-- ขนาดตัวอักษรก็ responsive ได้ -->
+        <p class="text-xl font-bold md:text-4xl">หัวข้อเล็กบนมือถือ ใหญ่บนคอม</p>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 12 ============================ -->
+    <section id="l12" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 12</p>
+      <h2 class="mt-1 text-2xl font-bold">Hover และสถานะ — ทำให้รู้สึกว่า "กดได้"</h2>
+      <p class="mt-3 text-slate-600">
+        คำนำหน้าบอก "เมื่อไหร่": <code class="rounded bg-slate-100 px-1">hover:</code> เอาเมาส์ชี้ ·
+        <code class="rounded bg-slate-100 px-1">active:</code> ขณะกด ·
+        <code class="rounded bg-slate-100 px-1">focus:</code> คลิกช่องกรอก ·
+        <code class="rounded bg-slate-100 px-1">disabled:</code> ปุ่มกดไม่ได้ ·
+        เติม <code class="rounded bg-slate-100 px-1">transition</code> ให้เปลี่ยนแบบนุ่มนวล
+      </p>
+      <div data-demo="l12" class="mt-5 space-y-5">
+        <div class="flex flex-wrap gap-3">
+          <button class="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700">hover เปลี่ยนสี</button>
+          <button class="rounded-lg bg-indigo-600 px-4 py-2 text-white transition hover:-translate-y-1 hover:shadow-lg">hover ลอยขึ้น</button>
+          <button class="rounded-lg bg-indigo-600 px-4 py-2 text-white transition active:scale-95">กดแล้วยุบ</button>
+          <button class="rounded-lg bg-indigo-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-40" disabled>disabled</button>
+        </div>
+        <input class="w-full max-w-sm rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100" placeholder="คลิกที่นี่ — ขอบเปลี่ยนสี (focus:)" />
+        <!-- group: ชี้ที่การ์ด แล้วลูกข้างในเปลี่ยนตาม -->
+        <a href="#l12" class="group block max-w-xs rounded-2xl border border-slate-200 p-5 transition hover:border-indigo-400 hover:shadow-lg">
+          <p class="font-bold group-hover:text-indigo-600">สนามบาสเกตบอล</p>
+          <p class="text-sm text-slate-500">ชี้ที่การ์ดนี้ดูสิ</p>
+          <p class="mt-2 text-sm text-indigo-600 opacity-0 transition group-hover:opacity-100">ดูรายละเอียด →</p>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 13 ============================ -->
+    <section id="l13" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 13</p>
+      <h2 class="mt-1 text-2xl font-bold">Animation — ของขยับเองโดยไม่ต้องเขียน JavaScript</h2>
+      <p class="mt-3 text-slate-600">
+        สำเร็จรูป 4 ตัว: <code class="rounded bg-slate-100 px-1">animate-spin</code> หมุน (โหลด) ·
+        <code class="rounded bg-slate-100 px-1">animate-ping</code> คลื่นกระจาย (แจ้งเตือน) ·
+        <code class="rounded bg-slate-100 px-1">animate-pulse</code> กะพริบช้าๆ (กำลังโหลดเนื้อหา) ·
+        <code class="rounded bg-slate-100 px-1">animate-bounce</code> เด้ง ·
+        ปรับความเร็ว transition ด้วย <code class="rounded bg-slate-100 px-1">duration-150 / 300 / 700</code>
+      </p>
+      <div data-demo="l13" class="mt-5 space-y-6 text-sm">
+        <div class="flex flex-wrap items-center gap-8">
+          <!-- วงกลมโหลด: ขอบ 3 ด้านจาง 1 ด้านเข้ม แล้วหมุน -->
+          <div class="size-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600"></div>
+          <!-- จุดแจ้งเตือน: วงหนึ่ง ping ซ้อนอยู่หลังจุดจริง -->
+          <span class="relative flex size-4">
+            <span class="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+            <span class="relative inline-flex size-4 rounded-full bg-red-500"></span>
+          </span>
+          <div class="animate-bounce text-3xl">⚽</div>
+        </div>
+        <!-- Skeleton: กล่องเทากะพริบ แทนเนื้อหาตอนกำลังโหลด -->
+        <div class="flex max-w-xs animate-pulse gap-4 rounded-2xl border border-slate-200 p-4">
+          <div class="size-12 rounded-full bg-slate-200"></div>
+          <div class="flex-1 space-y-2 py-1">
+            <div class="h-3 w-3/4 rounded bg-slate-200"></div>
+            <div class="h-3 w-1/2 rounded bg-slate-200"></div>
+          </div>
+        </div>
+        <!-- duration: เทียบความเร็วตอนชี้ -->
+        <div class="flex flex-wrap gap-3">
+          <div class="rounded-lg bg-violet-500 px-4 py-3 text-white transition duration-150 hover:scale-110">duration-150</div>
+          <div class="rounded-lg bg-violet-500 px-4 py-3 text-white transition duration-300 hover:scale-110">duration-300</div>
+          <div class="rounded-lg bg-violet-500 px-4 py-3 text-white transition duration-700 hover:scale-110 hover:rotate-3">duration-700 + rotate</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 14 ============================ -->
+    <section id="l14" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 14</p>
+      <h2 class="mt-1 text-2xl font-bold">Dark mode — เขียนคู่ <code>dark:</code></h2>
+      <p class="mt-3 text-slate-600">
+        เขียนสีโหมดสว่างตามปกติ แล้วเติม <code class="rounded bg-slate-100 px-1">dark:</code> สำหรับโหมดมืด เช่น
+        <code class="rounded bg-slate-100 px-1">bg-white dark:bg-slate-800</code>
+        — ไฟล์นี้ตั้งให้ <code class="rounded bg-slate-100 px-1">dark:</code> ทำงานเมื่อมี <code class="rounded bg-slate-100 px-1">class="dark"</code> ครอบอยู่ (ดู <code class="rounded bg-slate-100 px-1">@custom-variant</code> ใน &lt;head&gt;)
+      </p>
+      <div data-demo="l14" class="mt-5">
+        <div id="dark-box" class="rounded-2xl bg-slate-100 p-6 dark:bg-slate-900">
+          <button onclick="document.getElementById('dark-box').classList.toggle('dark')" class="rounded-lg bg-slate-800 px-4 py-2 text-sm text-white dark:bg-amber-300 dark:text-slate-900">
+            🌙 สลับโหมด
+          </button>
+          <div class="mt-4 max-w-xs rounded-2xl bg-white p-5 shadow dark:bg-slate-800">
+            <p class="text-lg font-bold text-slate-900 dark:text-white">สนามแบดมินตัน 2</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">ในร่ม · ติดแอร์</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 15 ============================ -->
+    <section id="l15" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 15</p>
+      <h2 class="mt-1 text-2xl font-bold">ปรับแต่งเอง — ค่าที่ไม่มีในชุด และสีแบรนด์ของเรา</h2>
+      <p class="mt-3 text-slate-600">
+        <b>ค่าเฉพาะครั้ง</b> ใส่ในวงเล็บเหลี่ยม <code class="rounded bg-slate-100 px-1">w-[350px] bg-[#132137] text-[22px]</code>
+        (ช่องว่างใช้ <code class="rounded bg-slate-100 px-1">_</code> แทน) ·
+        <b>ใช้ซ้ำทั้งเว็บ</b> ให้ประกาศใน <code class="rounded bg-slate-100 px-1">@theme</code> ใน &lt;head&gt; เช่น
+        <code class="rounded bg-slate-100 px-1">--color-brand-600: #4f46e5;</code> แล้วใช้ <code class="rounded bg-slate-100 px-1">bg-brand-600</code> ได้เลย
+      </p>
+      <div data-demo="l15" class="mt-5 space-y-6 text-sm">
+        <!-- ค่าเฉพาะครั้ง (arbitrary values) -->
+        <div class="w-[350px] max-w-full rounded-[20px] bg-[#132137] p-4 text-[22px] text-white">w-[350px] bg-[#132137]</div>
+        <div class="grid grid-cols-[120px_1fr] gap-3">
+          <div class="rounded bg-amber-300 p-3">120px</div>
+          <div class="rounded bg-amber-200 p-3">ที่เหลือทั้งหมด (1fr)</div>
+        </div>
+        <!-- สีแบรนด์ที่ประกาศใน @theme -->
+        <div class="flex flex-wrap gap-2">
+          <div class="rounded bg-brand-50 px-3 py-2">brand-50</div>
+          <div class="rounded bg-brand-100 px-3 py-2">brand-100</div>
+          <div class="rounded bg-brand-500 px-3 py-2 text-white">brand-500</div>
+          <div class="rounded bg-brand-600 px-3 py-2 text-white">brand-600</div>
+          <div class="rounded bg-brand-700 px-3 py-2 text-white">brand-700</div>
+        </div>
+        <button class="rounded-lg bg-brand-600 px-5 py-2 text-white hover:bg-brand-700">ปุ่มสีแบรนด์ — เปลี่ยนสีทั้งเว็บได้จากที่เดียว</button>
+      </div>
+    </section>
+
+    <!-- ============================ บทที่ 16 ============================ -->
+    <section id="l16" class="scroll-mt-20 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <p class="text-sm font-semibold text-indigo-600">บทที่ 16 · โปรเจคจริง</p>
+      <h2 class="mt-1 text-2xl font-bold">หน้าจองสนาม UniPlay — รวมทุกบท</h2>
+      <p class="mt-3 text-slate-600">
+        ใช้แค่สิ่งที่เรียนมา 15 บท: flex ทำหัวเว็บ, ไล่สีส่วนหัว, grid ทำการ์ด, relative/absolute ทำป้าย "ยอดนิยม", responsive 1→2→3 คอลัมน์, hover ที่การ์ดและปุ่ม, dark mode ทั้งหน้า
+        ลองย่อหน้าต่างและกดสลับโหมดดู
+      </p>
+      <div data-demo="l16" class="mt-5">
+        <div id="uniplay" class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-950">
+
+          <!-- หัวเว็บ: โลโก้ซ้าย เมนูขวา -->
+          <header class="flex items-center justify-between bg-white px-4 py-3 shadow-sm md:px-8 dark:bg-slate-900">
+            <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">⚽ UniPlay</span>
+            <div class="flex items-center gap-4 text-sm">
+              <a href="#l16" class="hidden text-slate-600 hover:text-indigo-600 sm:inline dark:text-slate-300">สนามทั้งหมด</a>
+              <a href="#l16" class="hidden text-slate-600 hover:text-indigo-600 sm:inline dark:text-slate-300">การจองของฉัน</a>
+              <button onclick="document.getElementById('uniplay').classList.toggle('dark')" class="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-800 dark:text-white">🌙</button>
+            </div>
+          </header>
+
+          <!-- ส่วนหัวใหญ่ + ช่องค้นหา -->
+          <div class="bg-linear-to-br from-indigo-600 to-violet-600 px-4 py-10 text-center text-white md:px-8 md:py-14">
+            <h3 class="text-2xl font-bold md:text-4xl">จองสนามกีฬาในมหาวิทยาลัย</h3>
+            <p class="mt-2 text-indigo-100">เลือกสนาม เลือกเวลา จองเสร็จใน 1 นาที</p>
+            <div class="mx-auto mt-6 flex max-w-md flex-col gap-2 sm:flex-row">
+              <input class="flex-1 rounded-lg px-4 py-2 text-slate-800 outline-none bg-white focus:ring-4 focus:ring-white/40" placeholder="ค้นหาสนาม เช่น ฟุตบอล" />
+              <button class="rounded-lg bg-amber-400 px-5 py-2 font-semibold text-slate-900 transition hover:bg-amber-300 active:scale-95">ค้นหา</button>
+            </div>
+          </div>
+
+          <!-- การ์ดสนาม: มือถือ 1 / แท็บเล็ต 2 / คอม 3 คอลัมน์ -->
+          <div class="grid grid-cols-1 gap-5 p-4 sm:grid-cols-2 md:p-8 lg:grid-cols-3">
+
+            <div class="overflow-hidden rounded-2xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:bg-slate-900">
+              <div class="relative flex h-32 items-center justify-center bg-linear-to-br from-green-400 to-emerald-600 text-5xl">
+                ⚽
+                <span class="absolute top-3 left-3 rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold text-emerald-700">🔥 ยอดนิยม</span>
+              </div>
+              <div class="p-5">
+                <div class="flex items-start justify-between">
+                  <h4 class="font-bold text-slate-900 dark:text-white">สนามฟุตบอล 1</h4>
+                  <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900 dark:text-green-300">ว่าง</span>
+                </div>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">หญ้าเทียม · 11 คน · กลางแจ้ง</p>
+                <div class="mt-4 flex items-center justify-between">
+                  <p class="font-semibold text-indigo-600 dark:text-indigo-400">฿300 <span class="text-xs font-normal text-slate-400">/ชม.</span></p>
+                  <button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white transition hover:bg-indigo-700 active:scale-95">จองเลย</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="overflow-hidden rounded-2xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:bg-slate-900">
+              <div class="flex h-32 items-center justify-center bg-linear-to-br from-orange-400 to-red-500 text-5xl">🏀</div>
+              <div class="p-5">
+                <div class="flex items-start justify-between">
+                  <h4 class="font-bold text-slate-900 dark:text-white">สนามบาสเกตบอล</h4>
+                  <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900 dark:text-amber-300">เหลือ 2 ช่วง</span>
+                </div>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">พื้นยาง · 10 คน · ในร่ม</p>
+                <div class="mt-4 flex items-center justify-between">
+                  <p class="font-semibold text-indigo-600 dark:text-indigo-400">฿200 <span class="text-xs font-normal text-slate-400">/ชม.</span></p>
+                  <button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white transition hover:bg-indigo-700 active:scale-95">จองเลย</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="overflow-hidden rounded-2xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:bg-slate-900">
+              <div class="flex h-32 items-center justify-center bg-linear-to-br from-sky-400 to-indigo-500 text-5xl">🏸</div>
+              <div class="p-5">
+                <div class="flex items-start justify-between">
+                  <h4 class="font-bold text-slate-900 dark:text-white">สนามแบดมินตัน 2</h4>
+                  <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900 dark:text-red-300">เต็ม</span>
+                </div>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">พื้นไม้ · 4 คน · ติดแอร์</p>
+                <div class="mt-4 flex items-center justify-between">
+                  <p class="font-semibold text-indigo-600 dark:text-indigo-400">฿150 <span class="text-xs font-normal text-slate-400">/ชม.</span></p>
+                  <button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40" disabled>เต็มแล้ว</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ท้ายเว็บ -->
+          <footer class="border-t border-slate-200 px-4 py-5 text-center text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+            © UniPlay · ระบบจองสนามกีฬามหาวิทยาลัย
+          </footer>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ สรุป ============================ -->
+    <section class="rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <h2 class="text-2xl font-bold">สรุป class ที่ใช้บ่อย (Cheat Sheet)</h2>
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-slate-200 text-slate-500">
+            <tr><th class="py-2 pr-4">อยากทำ</th><th class="py-2 pr-4">class</th><th class="py-2">บท</th></tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr><td class="py-2 pr-4">สีพื้น / สีตัวอักษร</td><td class="py-2 pr-4 font-mono">bg-indigo-600 · text-white</td><td>1</td></tr>
+            <tr><td class="py-2 pr-4">ขนาด / ความหนาตัวอักษร</td><td class="py-2 pr-4 font-mono">text-2xl · font-bold</td><td>2</td></tr>
+            <tr><td class="py-2 pr-4">ระยะห่างข้างใน / ข้างนอก</td><td class="py-2 pr-4 font-mono">p-4 · px-4 py-2 · mt-6</td><td>3</td></tr>
+            <tr><td class="py-2 pr-4">กว้าง / สูง</td><td class="py-2 pr-4 font-mono">w-full · max-w-md · h-32 · size-12</td><td>4</td></tr>
+            <tr><td class="py-2 pr-4">การ์ด</td><td class="py-2 pr-4 font-mono">rounded-2xl · shadow-md · border</td><td>5</td></tr>
+            <tr><td class="py-2 pr-4">เรียงแถว / จัดกลาง</td><td class="py-2 pr-4 font-mono">flex · items-center · justify-between · gap-4</td><td>6</td></tr>
+            <tr><td class="py-2 pr-4">ตารางการ์ด</td><td class="py-2 pr-4 font-mono">grid grid-cols-3 gap-4</td><td>7</td></tr>
+            <tr><td class="py-2 pr-4">ป้ายลอยมุม / ซ้อนชั้น / ซ่อน</td><td class="py-2 pr-4 font-mono">relative + absolute top-2 right-2 · z-10 · sticky top-0 · hidden</td><td>8</td></tr>
+            <tr><td class="py-2 pr-4">รูปไม่บิด / ไล่สี / ตัดข้อความ</td><td class="py-2 pr-4 font-mono">object-cover · aspect-video · bg-linear-to-r from-… to-… · truncate</td><td>9</td></tr>
+            <tr><td class="py-2 pr-4">ช่องกรอก</td><td class="py-2 pr-4 font-mono">border rounded-lg px-3 py-2 focus:ring-4 · accent-indigo-600</td><td>10</td></tr>
+            <tr><td class="py-2 pr-4">จอใหญ่ทำอีกแบบ</td><td class="py-2 pr-4 font-mono">md:grid-cols-3 · lg:text-4xl</td><td>11</td></tr>
+            <tr><td class="py-2 pr-4">ชี้ / กด / โฟกัส</td><td class="py-2 pr-4 font-mono">hover:bg-indigo-700 · active:scale-95 · transition</td><td>12</td></tr>
+            <tr><td class="py-2 pr-4">ของขยับเอง</td><td class="py-2 pr-4 font-mono">animate-spin · animate-pulse · duration-300</td><td>13</td></tr>
+            <tr><td class="py-2 pr-4">โหมดมืด</td><td class="py-2 pr-4 font-mono">dark:bg-slate-900</td><td>14</td></tr>
+            <tr><td class="py-2 pr-4">ค่าเฉพาะ / สีแบรนด์</td><td class="py-2 pr-4 font-mono">w-[350px] · bg-[#132137] · bg-brand-600</td><td>15</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-4 text-sm text-slate-500">ค้นหา class อื่นๆ ได้ที่ <a class="text-indigo-600 underline" href="https://tailwindcss.com/docs" target="_blank">tailwindcss.com/docs</a> (ช่องค้นหาพิมพ์ภาษาอังกฤษ เช่น "padding", "shadow")</p>
+    </section>
+  </main>
+
+  <!-- =====================================================================
+       สคริปต์ของหน้าบทเรียน (นักเรียนไม่ต้องเขียน):
+       หากล่อง data-demo ทุกกล่อง -> เอา HTML ข้างในมาแสดงเป็นโค้ด + ปุ่มคัดลอก
+       ===================================================================== -->
+  <script>
+    function dedent(html) {
+      const lines = html.replace(/^\n+/, '').replace(/\s+$/, '').split('\n');
+      const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+      const min = Math.min(...indents);
+      return lines.map((l) => l.slice(min)).join('\n');
+    }
+
+    // เบราว์เซอร์เขียน HTML กลับมาต่างจากต้นฉบับเล็กน้อย -> แปลงกลับให้ตรงกับที่เราเขียน (และตรงกับ TAILWIND_GUIDE.md)
+    function tidy(html) {
+      return html
+        .replace(/ (disabled|checked)=""/g, ' $1') // disabled="" -> disabled
+        .replace(/<(input|img)\b([^>]*?)>/g, '<$1$2 />'); // <input ...> -> <input ... />
+    }
+
+    document.querySelectorAll('[data-demo]').forEach((demo) => {
+      const code = dedent(tidy(demo.innerHTML));
+
+      // ป้าย "ผลลัพธ์" เหนือกล่องตัวอย่าง
+      const label = document.createElement('p');
+      label.className = 'mt-6 mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400';
+      label.textContent = 'ผลลัพธ์';
+      demo.before(label);
+      demo.classList.add('rounded-xl', 'border', 'border-dashed', 'border-slate-300', 'p-4');
+
+      // กล่องโค้ด + ปุ่มคัดลอก (กดดู/ซ่อนได้)
+      const box = document.createElement('details');
+      box.className = 'mt-3 rounded-xl bg-slate-900 text-slate-100';
+      box.innerHTML =
+        '<summary class="flex cursor-pointer items-center justify-between px-4 py-2 text-sm text-slate-300 select-none">' +
+        '<span>ดูโค้ด</span><button type="button" class="rounded bg-slate-700 px-2 py-1 text-xs hover:bg-slate-600">คัดลอก</button></summary>' +
+        '<pre class="overflow-x-auto px-4 pb-4 text-xs leading-relaxed"><code></code></pre>';
+      box.querySelector('code').textContent = code;
+      box.querySelector('button').addEventListener('click', (e) => {
+        e.preventDefault(); // ไม่ให้ไปเปิด/ปิด details
+        navigator.clipboard.writeText(code).then(() => {
+          e.target.textContent = 'คัดลอกแล้ว ✓';
+          setTimeout(() => (e.target.textContent = 'คัดลอก'), 1500);
+        });
+      });
+      demo.after(box);
+    });
+  </script>
+</body>
+</html>
