@@ -1,0 +1,9 @@
+/* โหลด Tailwind CSS ทั้งหมด (บรรทัดเดียวจบ ไม่ต้องมีไฟล์ tailwind.config) */
+@import "tailwindcss";
+
+/* ตั้งฟอนต์หลักของทั้งเว็บ = Noto Sans Thai
+   --font-noto-thai ถูกสร้างโดย next/font ใน layout.tsx
+   พอตั้ง --font-sans แล้ว class "font-sans" และฟอนต์ปกติของทั้งหน้าจะเป็นฟอนต์นี้ */
+@theme inline {
+  --font-sans: var(--font-noto-thai);
+}
